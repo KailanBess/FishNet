@@ -1,0 +1,147 @@
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Windows.Storage.Pickers;
+
+namespace FishNet;
+
+public sealed partial class MainWindow
+{
+    private readonly LinkedLibrary library = new();
+    private readonly Appearance appearance = new();
+    private bool libraryBusy;
+    private string selectedCollection = "All collections";
+
+    private async void InitializeHub(object sender, RoutedEventArgs e)
+    {
+        Root.Loaded -= InitializeHub;
+        appearance.Load(); appearance.Apply(Root);
+        AppearanceBody.Children.Add(appearance.Editor(Root, RenderLibrary, ShowError));
+        await library.LoadAsync();
+        RenderLibrary();
+        if (library.Warning is not null) ShowError(library.Warning);
+    }
+    private void RenderLibrary()
+    {
+        LibraryBody.Children.Clear();
+        LibraryBody.Spacing = appearance.Compact ? 8 : 18;
+        LibraryBody.Children.Add(new TextBlock { Text = "Your apps, in your own currents.", FontSize = 28, TextWrapping = TextWrapping.Wrap });
+        LibraryBody.Children.Add(new TextBlock { Text = "Link desktop apps, add your own browser, and organize them into collections. Nothing is installed or embedded.", TextWrapping = TextWrapping.Wrap });
+        var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        void AddButton(string label, Func<Task> action)
+        {
+            var button = new Button { Content = label, IsEnabled = library.Writable && !libraryBusy };
+            button.Click += async (_, _) =>
+            {
+                if (libraryBusy) return;
+                libraryBusy = true; RenderLibrary();
+                try { await action(); } catch (Exception ex) { ShowError(ex.Message); }
+                finally { libraryBusy = false; RenderLibrary(); }
+            };
+            toolbar.Children.Add(button);
+        }
+        AddButton("Link app", () => AddLink("App"));
+        AddButton("Add browser", () => AddLink("Browser"));
+        AddButton("Add website", () => AddLink("Website"));
+        AddButton("New collection", CreateCollection);
+        LibraryBody.Children.Add(toolbar);
+        var filter = new ComboBox { Header = "Collection", ItemsSource = new[] { "All collections" }.Concat(library.State.Collections).ToList(), SelectedItem = selectedCollection };
+        filter.SelectionChanged += (_, _) => { selectedCollection = filter.SelectedItem?.ToString() ?? "All collections"; RenderLibrary(); };
+        LibraryBody.Children.Add(filter);
+        var apps = library.State.Apps.Where(a => selectedCollection == "All collections" || a.Collection == selectedCollection).ToList();
+        if (apps.Count == 0) LibraryBody.Children.Add(new TextBlock { Text = "No links here yet. Add an app or browser to begin.", TextWrapping = TextWrapping.Wrap });
+        foreach (var app in apps)
+        {
+            var card = new StackPanel { Spacing = 8 };
+            card.Children.Add(new TextBlock { Text = app.Name, FontSize = 22 });
+            card.Children.Add(new TextBlock { Text = $"{app.Kind} · {app.Collection}\n{app.Target}", TextWrapping = TextWrapping.Wrap, Opacity = .7 });
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+            var launch = new Button { Content = "Open externally" };
+            launch.Click += (_, _) => { try { library.Launch(app); } catch (Exception ex) { ShowError(ex.Message); } };
+            var remove = new Button { Content = "Remove link", IsEnabled = library.Writable && !libraryBusy };
+            var edit = new Button { Content = "Edit / move", IsEnabled = library.Writable && !libraryBusy };
+            edit.Click += async (_, _) =>
+            {
+                if (libraryBusy) return;
+                libraryBusy = true; RenderLibrary();
+                try
+                {
+                    var name = new TextBox { Header = "Display name", Text = app.Name, MaxLength = 100 };
+                    var collection = new ComboBox { Header = "Collection", ItemsSource = library.State.Collections, SelectedItem = app.Collection };
+                    var body = new StackPanel { Spacing = 12 }; body.Children.Add(name); body.Children.Add(collection);
+                    if (await Dialog("Edit link", body).ShowAsync() == ContentDialogResult.Primary)
+                    {
+                        if (string.IsNullOrWhiteSpace(name.Text)) throw new InvalidOperationException("Enter a display name.");
+                        var next = library.Copy();
+                        var index = next.Apps.FindIndex(a => a.Id == app.Id);
+                        next.Apps[index] = app with { Name = name.Text.Trim(), Collection = collection.SelectedItem?.ToString() ?? app.Collection };
+                        await library.SaveAsync(next);
+                    }
+                }
+                catch (Exception ex) { ShowError(ex.Message); }
+                finally { libraryBusy = false; RenderLibrary(); }
+            };
+            remove.Click += async (_, _) =>
+            {
+                if (libraryBusy) return;
+                libraryBusy = true;
+                try
+                {
+                    if (library.State.Apps.Any(a => a.BrowserId == app.Id)) throw new InvalidOperationException("Remove this browser's website links first.");
+                    var next = library.Copy(); next.Apps.RemoveAll(a => a.Id == app.Id); await library.SaveAsync(next);
+                }
+                catch (Exception ex) { ShowError(ex.Message); }
+                finally { libraryBusy = false; RenderLibrary(); }
+            };
+            actions.Children.Add(launch); actions.Children.Add(edit); actions.Children.Add(remove); card.Children.Add(actions);
+            LibraryBody.Children.Add(new Border { Child = card, Padding = new Thickness(20), CornerRadius = new CornerRadius(16), Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255,16,36,47)) });
+        }
+    }
+    private async Task CreateCollection()
+    {
+        var name = new TextBox { Header = "Collection name", MaxLength = 80 };
+        var dialog = Dialog("New collection", name);
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        var value = name.Text.Trim();
+        if (value.Length == 0 || value == "All collections" || library.State.Collections.Contains(value, StringComparer.OrdinalIgnoreCase)) throw new InvalidOperationException("Choose a unique collection name.");
+        var next = library.Copy(); next.Collections.Add(value); await library.SaveAsync(next);
+        selectedCollection = value;
+    }
+    private ContentDialog Dialog(string title, UIElement body) => new()
+    { Title = title, Content = body, XamlRoot = Root.XamlRoot, RequestedTheme = ElementTheme.Dark, PrimaryButtonText = "Save", CloseButtonText = "Cancel" };
+
+    private async Task AddLink(string kind)
+    {
+        string target = "";
+        if (kind != "Website")
+        {
+            var picker = new FileOpenPicker(); picker.FileTypeFilter.Add(".exe");
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
+            var file = await picker.PickSingleFileAsync();
+            if (file is null || closed) return;
+            target = file.Path;
+        }
+        var body = new StackPanel { Spacing = 12 };
+        var name = new TextBox { Header = "Display name", Text = Path.GetFileNameWithoutExtension(target), MaxLength = 100 };
+        var collection = new ComboBox { Header = "Collection", ItemsSource = library.State.Collections, SelectedIndex = 0 };
+        var url = new TextBox { Header = "HTTPS website address", PlaceholderText = "https://…" };
+        var browsers = library.State.Apps.Where(a => a.Kind == "Browser").ToList();
+        var browser = new ComboBox { Header = "Open with your added browser", ItemsSource = browsers, DisplayMemberPath = "Name", SelectedIndex = browsers.Count > 0 ? 0 : -1 };
+        body.Children.Add(name); body.Children.Add(collection);
+        if (kind == "Website")
+        {
+            if (browsers.Count == 0) throw new InvalidOperationException("Use Add browser first. FishNet has no built-in browser.");
+            body.Children.Add(url); body.Children.Add(browser);
+        }
+        else body.Children.Add(new TextBlock { Text = target, TextWrapping = TextWrapping.Wrap });
+        if (await Dialog("Add " + kind.ToLowerInvariant(), body).ShowAsync() != ContentDialogResult.Primary) return;
+        if (string.IsNullOrWhiteSpace(name.Text)) throw new InvalidOperationException("Enter a display name.");
+        if (kind == "Website")
+        {
+            if (!Uri.TryCreate(url.Text.Trim(), UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps) throw new InvalidOperationException("Enter a valid HTTPS address.");
+            target = uri.AbsoluteUri;
+        }
+        var next = library.Copy();
+        next.Apps.Add(new LinkedApp(Guid.NewGuid().ToString("N"), name.Text.Trim(), kind, target, collection.SelectedItem?.ToString() ?? "Favorites", kind == "Website" ? (browser.SelectedItem as LinkedApp)?.Id : null));
+        await library.SaveAsync(next);
+    }
+}

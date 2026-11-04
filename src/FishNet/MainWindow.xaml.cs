@@ -16,6 +16,7 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1120, 780));
+        Root.Loaded += InitializeHub;
         PlayerView.SetMediaPlayer(player);
         player.MediaOpened += MediaOpened;
         player.MediaFailed += MediaFailed;
@@ -107,3 +108,4 @@ public sealed partial class MainWindow : Window
         Notice.IsOpen = true;
     }
 }
+

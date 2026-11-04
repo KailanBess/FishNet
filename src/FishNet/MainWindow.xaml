@@ -1,11 +1,14 @@
 <Window x:Class="FishNet.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="FishNet">
-  <Grid x:Name="Root" RequestedTheme="Dark" Background="#09151D" Padding="32" RowSpacing="18">
+  <Grid x:Name="Root" RequestedTheme="Dark" Background="#09151D">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <InfoBar x:Name="Notice" Margin="32,16,32,0" IsOpen="False" IsClosable="True"/>
+    <Pivot Grid.Row="1" Margin="16"><PivotItem Header="Player"><Grid Padding="16" RowSpacing="18">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <Grid ColumnSpacing="24"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-      <StackPanel Spacing="6"><TextBlock Text="◉  FishNet" Foreground="#67E8D3" FontSize="30" FontWeight="SemiBold"/><TextBlock Text="Your media. A little more serene." Foreground="#A0B8C3"/></StackPanel>
+      <StackPanel Spacing="6"><TextBlock Text="◉  FishNet" Foreground="{StaticResource AquariumAccent}" FontSize="30" FontWeight="SemiBold"/><TextBlock Text="Your media. A little more serene." Foreground="#A0B8C3"/></StackPanel>
       <Button x:Name="OpenButton" Grid.Column="1" Content="Open local media" Click="OpenFile" VerticalAlignment="Center"/>
     </Grid>
-    <InfoBar x:Name="Notice" Grid.Row="1" IsOpen="False" IsClosable="True"/>
+
     <Border Grid.Row="2" Background="#10242F" CornerRadius="16" BorderBrush="#22414E" BorderThickness="1">
       <Grid><TextBlock x:Name="EmptyState" Text="Drop into something good.&#x0a;Open a local audio or video file to begin." TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#A0B8C3" FontSize="22" Margin="24"/>
         <MediaPlayerElement x:Name="PlayerView" Visibility="Collapsed" AreTransportControlsEnabled="True" AutoPlay="False"/>
@@ -15,6 +18,10 @@
       <StackPanel Spacing="4"><TextBlock x:Name="NowPlaying" Text="Nothing playing" FontSize="18" TextTrimming="CharacterEllipsis"/><TextBlock x:Name="PlaybackStatus" Text="LOCAL PLAYBACK · PREVIEW 0.1" Foreground="#A0B8C3" FontSize="11"/></StackPanel>
       <Button x:Name="CloseButton" Grid.Column="1" Content="Close media" Click="CloseMedia" IsEnabled="False"/>
     </Grid>
-    <TextBlock Grid.Row="4" Text="FishNet is a standalone Aquarium companion. Library indexing and Aquarium installation are not connected yet." TextWrapping="Wrap" Foreground="#8CA9B5" FontSize="12"/>
+    <TextBlock Grid.Row="4" Text="FishNet is a standalone Aquarium companion. Link apps and browsers in App library. Updates are managed by Aquarium." TextWrapping="Wrap" Foreground="#8CA9B5" FontSize="12"/>
+  </Grid></PivotItem>
+      <PivotItem Header="App library"><ScrollViewer><StackPanel x:Name="LibraryBody" Margin="16" Spacing="18"/></ScrollViewer></PivotItem>
+      <PivotItem Header="Customize"><ScrollViewer><StackPanel x:Name="AppearanceBody" Margin="16" Spacing="16"><TextBlock Text="Make FishNet yours" FontSize="28"/><TextBlock Text="Updates are managed in Aquarium."/></StackPanel></ScrollViewer></PivotItem>
+    </Pivot>
   </Grid>
 </Window>
