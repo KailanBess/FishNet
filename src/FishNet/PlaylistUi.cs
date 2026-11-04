@@ -107,11 +107,10 @@ public sealed partial class MainWindow
     private async Task NextPlaylistTrack()
     {
         if (closed) return;
-        if (repeatPlaylist && queueIndex + 1 >= playbackQueue.Count && playbackQueue.Any(File.Exists)) queueIndex = -1;
-        while (++queueIndex < playbackQueue.Count)
+        queueIndex = PlaylistQueue.NextIndex(playbackQueue, queueIndex, repeatPlaylist, File.Exists);
+        if (queueIndex >= 0)
         {
             var path = playbackQueue[queueIndex];
-            if (!File.Exists(path)) continue;
             try { await PlayLocalAsync(await StorageFile.GetFileFromPathAsync(path), true); return; }
             catch (Exception ex) { ShowError("Could not play playlist track: " + ex.Message); playbackQueue = []; queueIndex = -1; return; }
         }

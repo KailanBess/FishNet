@@ -10,6 +10,9 @@ try
     if (!PlaylistExchange.Read(PlaylistExchange.Write(imported), exchangePath).SequenceEqual(imported)) throw new Exception("M3U export/import changed track order");
     try { PlaylistExchange.Read("https://example.com/audio.mp3", exchangePath); throw new Exception("Remote playlist input accepted"); } catch (InvalidDataException) { }
     var first = Path.Combine(root, "first.mp3"); var second = Path.Combine(root, "second.MP3");
+    if (PlaylistQueue.NextIndex([first, second], 0, true, p => p == first) != 0) throw new Exception("Repeat failed with a missing trailing track");
+    if (PlaylistQueue.NextIndex([first, second], 0, false, p => p == first) != -1) throw new Exception("Nonrepeating playlist wrapped");
+    if (PlaylistQueue.NextIndex([first, second], 0, true, _ => false) != -1) throw new Exception("All-missing repeating playlist did not stop");
     await playlists.SaveAsync([new Playlist("fixture", "My MP3s", [first, second])]);
     var reloadLists = new Playlists(root); await reloadLists.LoadAsync();
     if (!reloadLists.Items.Single().Tracks.SequenceEqual(new[] { first, second })) throw new Exception("Playlist order not persisted");

@@ -3,6 +3,19 @@ using System.Text.Json;
 namespace FishNet;
 
 public sealed record Playlist(string Id, string Name, List<string> Tracks);
+public static class PlaylistQueue
+{
+    public static int NextIndex(IReadOnlyList<string> tracks, int current, bool repeat, Func<string, bool> exists)
+    {
+        for (var tried = 0; tried < tracks.Count; tried++)
+        {
+            current++;
+            if (current >= tracks.Count) { if (!repeat) return -1; current = 0; }
+            if (exists(tracks[current])) return current;
+        }
+        return -1;
+    }
+}
 public sealed class Playlists
 {
     private readonly string path;
