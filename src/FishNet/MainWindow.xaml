@@ -6,7 +6,7 @@
         <NavigationViewItem Content="Home" Tag="Home" Icon="Home"/>
         <NavigationViewItem Content="Music" Tag="Music" Icon="Audio"/>
         <NavigationViewItem Content="Videos" Tag="Videos" Icon="Video"/>
-        <NavigationViewItem Content="Apps &amp; browsers" Tag="Apps" Icon="Library"/>
+        <NavigationViewItem Content="Services &amp; apps" Tag="Apps" Icon="Library"/>
         <NavigationViewItem Content="Now playing" Tag="Player" Icon="Play"/>
       </NavigationView.MenuItems>
       <Grid Padding="28,24,28,18" RowSpacing="18">
@@ -28,3 +28,4 @@
     </NavigationView>
   </Grid>
 </Window>
+

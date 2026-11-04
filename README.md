@@ -50,3 +50,6 @@ Smoke checks: play MP3/MP4, pause/seek/volume, cancel file selection, switch/clo
 
 This review branch adds a persistent Recent media catalog, Windows-provided artwork thumbnails when available, music/video filters, native persistent playback, and the matching glossy outlined FishNet icon. Empty libraries remain empty; no sample albums are bundled. Browser links remain external. A real queue and folder import are follow-up work. Existing media/app-link and appearance files remain separate. The PNG master and multi-size ICO are under src/FishNet/Assets.
 
+
+## Services
+Services & apps includes built-in Spotify, YouTube and SoundCloud presets. Add a browser first, then add a preset to a collection or use Add custom service for your own HTTPS address. Each saved service keeps its chosen browser and can be renamed, moved or removed. These are external service launchers, not account connections or embedded streaming; provider sign-in and playback happen in your browser. Local playback remains inside FishNet.

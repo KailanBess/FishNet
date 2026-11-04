@@ -3,6 +3,7 @@ var root = Path.Combine(Path.GetTempPath(), "FishNet-media-tests-" + Guid.NewGui
 Directory.CreateDirectory(root);
 try
 {
+    if (ServiceCatalog.BuiltIn.Select(s => s.Id).Distinct().Count() != ServiceCatalog.BuiltIn.Count || ServiceCatalog.BuiltIn.Any(s => !Uri.TryCreate(s.Url, UriKind.Absolute, out var u) || u.Scheme != "https")) throw new Exception("Service catalog contains duplicate IDs or invalid HTTPS targets");
     var catalog = new MediaCatalog(root); await catalog.LoadAsync();
     if (catalog.Items.Count != 0) throw new Exception("Empty library fabricated entries");
     await catalog.RememberAsync(Path.Combine(root, "Fixture Song.MP3"));
@@ -21,3 +22,4 @@ finally
     if (!Path.GetFullPath(root).StartsWith(Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) || !Path.GetFileName(root).StartsWith("FishNet-media-tests-")) throw new Exception("Unsafe cleanup path");
     Directory.Delete(root, true);
 }
+

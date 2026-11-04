@@ -20,7 +20,7 @@ public sealed partial class MainWindow
     private void SearchMedia(object sender, TextChangedEventArgs args) { if (mediaReady) RenderMedia(); }
     private void RenderMedia()
     {
-        MediaPageTitle.Text = mediaPage == "Apps" ? "Apps & browsers" : mediaPage == "Player" ? "Now playing" : mediaPage;
+        MediaPageTitle.Text = mediaPage == "Apps" ? "Services & apps" : mediaPage == "Player" ? "Now playing" : mediaPage;
         AppPane.Visibility = mediaPage == "Apps" ? Visibility.Visible : Visibility.Collapsed;
         AppearancePane.Visibility = mediaPage == "Customize" ? Visibility.Visible : Visibility.Collapsed;
         MediaPane.Visibility = mediaPage is "Home" or "Music" or "Videos" ? Visibility.Visible : Visibility.Collapsed;
@@ -82,3 +82,4 @@ public sealed partial class MainWindow
         catch (Exception ex) { ShowError("Playback started, but the media library was not saved: " + ex.Message); }
     }
 }
+
