@@ -1,0 +1,6 @@
+FishNet uses unmodified TagLibSharp 2.3.0 for MP3 metadata editing.
+Copyright: Brian Nickel, Gabriel Burt, Stephen Shaw and contributors.
+License: GNU Lesser General Public License version 2.1 only (included).
+Source: https://github.com/mono/taglib-sharp/tree/TaglibSharp-2.3.0
+Package: https://www.nuget.org/packages/TagLibSharp/2.3.0
+TagLibSharp is dynamically linked and distributed as a separate DLL; it can be replaced with a compatible version. FishNet does not restrict modification or reverse engineering for debugging modifications to this library.

@@ -1,3 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup><ItemGroup><Compile Include="../../src/FishNet/MediaCatalog.cs" Link="MediaCatalog.cs" /><Compile Include="../../src/FishNet/ServiceCatalog.cs" Link="ServiceCatalog.cs" /><Compile Include="../../src/FishNet/Playlists.cs" Link="Playlists.cs" /></ItemGroup></Project>
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup><ItemGroup><Compile Include="../../src/FishNet/MediaCatalog.cs" Link="MediaCatalog.cs" /><Compile Include="../../src/FishNet/ServiceCatalog.cs" Link="ServiceCatalog.cs" /><Compile Include="../../src/FishNet/Playlists.cs" Link="Playlists.cs" /><Compile Include="../../src/FishNet/PlaylistExchange.cs" Link="PlaylistExchange.cs" /></ItemGroup></Project>
+
 
 

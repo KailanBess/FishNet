@@ -23,12 +23,31 @@ public sealed class MediaCatalog
     public async Task RememberAsync(string file)
     {
         if (Warning is not null) return;
-        var audio = new[] { ".mp3", ".m4a", ".wav", ".flac", ".wma" }.Contains(System.IO.Path.GetExtension(file), StringComparer.OrdinalIgnoreCase);
+        var audio = IsAudio(file);
         var next = Items.Where(i => !i.Path.Equals(file, StringComparison.OrdinalIgnoreCase)).ToList();
         next.Insert(0, new RecentMedia(file, System.IO.Path.GetFileNameWithoutExtension(file), audio ? "Music" : "Videos", DateTimeOffset.Now));
-        next = next.Take(100).ToList();
+        await SaveAsync(next);
+    }
+    public async Task ImportAsync(IEnumerable<string> paths)
+    {
+        if (Warning is not null) throw new InvalidOperationException(Warning);
+        var next = Items.ToList(); var known = next.Select(i => i.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var file in paths)
+            if (known.Add(file)) next.Add(new(file, System.IO.Path.GetFileNameWithoutExtension(file), IsAudio(file) ? "Music" : "Videos", DateTimeOffset.MinValue));
+        if (next.Count > 10000) throw new InvalidOperationException("The library limit is 10,000 files.");
+        await SaveAsync(next);
+    }
+    public async Task RelinkAsync(string previous, string replacement)
+    {
+        if (Warning is not null) throw new InvalidOperationException(Warning);
+        await SaveAsync(Items.Where(i => !i.Path.Equals(replacement, StringComparison.OrdinalIgnoreCase)).Select(i => i.Path.Equals(previous, StringComparison.OrdinalIgnoreCase) ? i with { Path = replacement, Name = System.IO.Path.GetFileNameWithoutExtension(replacement), Kind = IsAudio(replacement) ? "Music" : "Videos" } : i).ToList());
+    }
+    public static bool IsAudio(string file) => new[] { ".mp3", ".m4a", ".wav", ".flac", ".wma", ".aac", ".ogg" }.Contains(System.IO.Path.GetExtension(file), StringComparer.OrdinalIgnoreCase);
+    private async Task SaveAsync(List<RecentMedia> next)
+    {
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
         await File.WriteAllTextAsync(path + ".tmp", JsonSerializer.Serialize(next, new JsonSerializerOptions { WriteIndented = true }));
         File.Move(path + ".tmp", path, true); Items = next;
     }
 }
+

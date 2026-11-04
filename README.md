@@ -68,3 +68,13 @@ dotnet run --project tests/FishNet.ConversionTests -c Release
 The Windows-only conversion check generates its own tone/video, exercises the real converter, decodes audio outputs to verify duration, and checks cancellation, invalid input and source overwrite prevention. No user media is used.
 
 Windows API reference: https://learn.microsoft.com/en-us/windows/uwp/audio-video-camera/transcode-media-files
+
+## Media tools expansion
+- Converter → Batch convert files processes selected files sequentially into a chosen folder. Names are made unique, successful copies remain after cancellation, failures are listed per file, and source files are kept. The selected format applies to the batch.
+- Home/Music/Videos → Import media folder recursively indexes audio/video references (up to 10,000); inaccessible folders and directory links are skipped. Path duplicates are ignored. The grid shows up to 250 matches; search narrows larger libraries.
+- MP3 cards → Tags & cover art edits title/artist/album/year/track and PNG/JPEG front-cover art after preview. Each save retains an exact original backup beside the MP3. Locked files fail without replacing the original.
+- Missing media cards → Relink file repairs the library reference and matching playlist references.
+- Playlists includes shuffle, repeat and local M3U/M3U8 import/export. Remote URLs in imported playlists are rejected; missing local MP3 references are retained for review.
+- Playback tools loads local SRT/VTT subtitles, disables captions, changes playback speed and advances the playlist. Windows caption controls also expose embedded tracks. Native codec/subtitle compatibility varies by file.
+
+TagLibSharp 2.3.0 is dynamically linked for metadata; license and source information ship in Licenses/. See THIRD-PARTY.txt. These tools run locally and do not download or convert service streams.

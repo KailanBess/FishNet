@@ -41,12 +41,15 @@ public sealed partial class MainWindow
         MediaBody.Children.Add(new TextBlock { Text = "Audio: high quality preset. MP3: 192 kbps. Video: 720p preset. A conversion cannot restore quality lost in the source.", TextWrapping = TextWrapping.Wrap, Opacity = .7 });
         var start = new Button { Content = "Convert and save as…", IsEnabled = conversionInput is not null && !converting };
         start.Click += async (_, _) => await ConvertMedia(); MediaBody.Children.Add(start);
+        var batch = new Button { Content = "Batch convert files…", IsEnabled = !converting };
+        batch.Click += async (_, _) => await ConvertBatch(); MediaBody.Children.Add(batch);
         var cancel = new Button { Content = "Cancel conversion", IsEnabled = converting };
         cancel.Click += (_, _) => { cancelConversion = true; conversionCancellation?.Cancel(); conversionStatus = "Cancelling…"; if (conversionStatusLabel is not null) conversionStatusLabel.Text = conversionStatus; };
         MediaBody.Children.Add(cancel);
         conversionProgress = new ProgressBar { Minimum = 0, Maximum = 100, IsIndeterminate = converting };
         conversionStatusLabel = new TextBlock { Text = conversionStatus, TextWrapping = TextWrapping.Wrap };
         MediaBody.Children.Add(conversionProgress); MediaBody.Children.Add(conversionStatusLabel);
+        foreach (var result in batchResults) MediaBody.Children.Add(new TextBlock { Text = result, TextWrapping = TextWrapping.Wrap });
     }
     private async Task ConvertMedia()
     {

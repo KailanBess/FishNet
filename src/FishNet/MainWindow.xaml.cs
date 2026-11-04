@@ -84,6 +84,7 @@ public sealed partial class MainWindow : Window
         playbackQueue = []; queueIndex = -1;
         player.Pause();
         player.Source = null;
+        playbackItem = null;
         source?.Dispose();
         source = null;
         PlayerView.Visibility = Visibility.Collapsed;

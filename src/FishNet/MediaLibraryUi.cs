@@ -20,16 +20,19 @@ public sealed partial class MainWindow
     private void SearchMedia(object sender, TextChangedEventArgs args) { if (mediaReady) RenderMedia(); }
     private void RenderMedia()
     {
-        MediaPageTitle.Text = mediaPage == "Apps" ? "Services & apps" : mediaPage == "Player" ? "Now playing" : mediaPage;
+        MediaPageTitle.Text = mediaPage == "Apps" ? "Services & apps" : mediaPage == "Player" ? "Now playing" : mediaPage == "PlaybackTools" ? "Playback tools" : mediaPage;
         AppPane.Visibility = mediaPage == "Apps" ? Visibility.Visible : Visibility.Collapsed;
         AppearancePane.Visibility = mediaPage == "Customize" ? Visibility.Visible : Visibility.Collapsed;
-        MediaPane.Visibility = mediaPage is "Home" or "Music" or "Videos" or "Playlists" or "Converter" ? Visibility.Visible : Visibility.Collapsed;
+        MediaPane.Visibility = mediaPage is "Home" or "Music" or "Videos" or "Playlists" or "Converter" or "PlaybackTools" ? Visibility.Visible : Visibility.Collapsed;
         PageHost.Visibility = mediaPage == "Player" ? Visibility.Collapsed : Visibility.Visible;
         Grid.SetRow(PlayerContainer, mediaPage == "Player" ? 1 : 2);
         PlayerContainer.Height = mediaPage == "Player" ? double.NaN : 172;
         if (mediaPage == "Playlists") { RenderPlaylists(); return; }
+        if (mediaPage == "PlaybackTools") { RenderPlaybackTools(); return; }
         if (mediaPage == "Converter") { RenderConverter(); return; }
         MediaBody.Children.Clear();
+        var import = new Button { Content = "Import media folder", IsEnabled = !mediaToolsBusy && mediaCatalog.Warning is null };
+        import.Click += async (_, _) => await ImportMediaFolder(); MediaBody.Children.Add(import);
         MediaBody.Children.Add(new TextBlock { Text = mediaPage == "Home" ? "Recent" : mediaPage, FontSize = 25, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
         var entries = mediaCatalog.Items.Where(i => (mediaPage == "Home" || i.Kind == mediaPage) && i.Name.Contains(MediaSearch.Text, StringComparison.OrdinalIgnoreCase)).ToList();
         if (entries.Count == 0)
@@ -47,7 +50,8 @@ public sealed partial class MainWindow
             for (var i = 0; i < Math.Ceiling(grid.Children.Count / (double)columns); i++) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             for (var i = 0; i < grid.Children.Count; i++) { Grid.SetColumn((FrameworkElement)grid.Children[i], i % columns); Grid.SetRow((FrameworkElement)grid.Children[i], i / columns); }
         }
-        foreach (var entry in entries)
+        if (entries.Count > 250) MediaBody.Children.Add(new TextBlock { Text = "Showing the first 250 matches. Search to narrow your library." });
+        foreach (var entry in entries.Take(250))
         {
             var card = new StackPanel { Spacing = 8 };
             var artwork = new Grid { Height = 174, Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 43, 43, 48)), CornerRadius = new CornerRadius(8) };
@@ -58,6 +62,14 @@ public sealed partial class MainWindow
             open.Click += async (_, _) => { try { await PlayLocalAsync(await StorageFile.GetFileFromPathAsync(entry.Path)); } catch (Exception ex) { ShowError("Could not open media: " + ex.Message); } };
             card.Children.Add(open); card.Children.Add(new TextBlock { Text = entry.Name, FontSize = 16, TextWrapping = TextWrapping.Wrap });
             card.Children.Add(new TextBlock { Text = entry.Kind, FontSize = 13, Opacity = .6 });
+            if (Path.GetExtension(entry.Path).Equals(".mp3", StringComparison.OrdinalIgnoreCase))
+            {
+                var tags = new Button { Content = "Tags & cover art" }; tags.Click += async (_, _) => await EditTags(entry.Path); card.Children.Add(tags);
+            }
+            if (!File.Exists(entry.Path))
+            {
+                var repair = new Button { Content = "Missing · Relink file" }; repair.Click += async (_, _) => await RelinkMedia(entry); card.Children.Add(repair);
+            }
             grid.Children.Add(card); _ = LoadArtworkAsync(entry, image);
         }
         grid.SizeChanged += (_, _) => Arrange(); MediaBody.Children.Add(grid); Arrange();
@@ -80,10 +92,14 @@ public sealed partial class MainWindow
         player.Pause(); player.Source = null; source?.Dispose(); source = next;
         Notice.IsOpen = false; NowPlaying.Text = file.Name; PlaybackStatus.Text = "Opening media…";
         EmptyState.Visibility = Visibility.Collapsed; PlayerView.Visibility = Visibility.Visible; CloseButton.IsEnabled = true;
-        player.Source = source; player.Play();
+        playbackItem = new Windows.Media.Playback.MediaPlaybackItem(source);
+        player.Source = playbackItem; player.Play();
         try { await mediaCatalog.RememberAsync(file.Path); if (mediaReady) RenderMedia(); }
         catch (Exception ex) { ShowError("Playback started, but the media library was not saved: " + ex.Message); }
     }
 }
+
+
+
 
 

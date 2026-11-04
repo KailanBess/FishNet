@@ -28,6 +28,20 @@ try
         var properties = await decoded.Properties.GetMusicPropertiesAsync();
         if (properties.Duration.TotalSeconds < .8) throw new Exception(format + " output duration invalid");
         Console.WriteLine("PASS: generated WAV → " + format + " with real duration");
+        if (format == "MP3")
+        {
+            var tagPath = Path.Combine(root, "tags-fixture.mp3"); File.Copy(path, tagPath);
+            var before = System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(tagPath));
+            var coverPath = Path.Combine(root, "cover.png");
+            File.WriteAllBytes(coverPath, Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII="));
+            var backup = MediaTags.Save(tagPath, new AudioTags("Fixture title", "Fixture artist", "Fixture album", 2026, 2), coverPath);
+            var tags = MediaTags.Read(tagPath);
+            if (tags.Title != "Fixture title" || tags.Artist != "Fixture artist" || tags.Year != 2026 || tags.Track != 2) throw new Exception("MP3 tag edits not persisted");
+            if (!System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(backup)).SequenceEqual(before)) throw new Exception("Tag backup changed original bytes");
+            using var tagged = TagLib.File.Create(tagPath);
+            if (tagged.Tag.Pictures.Length != 1 || tagged.Tag.Pictures[0].MimeType != "image/png") throw new Exception("Cover art not saved");
+            Console.WriteLine("PASS: MP3 tags/cover art and exact original backup");
+        }
     }
     var cancelledPath = Path.Combine(root, "cancelled.mp3"); File.WriteAllBytes(cancelledPath, []);
     var composition = new Windows.Media.Editing.MediaComposition();
@@ -37,6 +51,20 @@ try
     var video = await StorageFile.GetFileFromPathAsync(videoPath);
     var render = await composition.RenderToFileAsync(video);
     if (render != Windows.Media.Transcoding.TranscodeFailureReason.None) throw new Exception("Could not generate video fixture: " + render);
+    var subtitlePath = Path.Combine(root, "fixture.srt"); await File.WriteAllTextAsync(subtitlePath, "1\n00:00:00,100 --> 00:00:00,900\nFixture caption\n");
+    using (var mediaSource = Windows.Media.Core.MediaSource.CreateFromStorageFile(video))
+    using (var mediaPlayer = new Windows.Media.Playback.MediaPlayer { IsMuted = true })
+    {
+        var resolved = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var subtitles = Windows.Media.Core.TimedTextSource.CreateFromUri(new Uri(subtitlePath));
+        subtitles.Resolved += (_, result) => { if (result.Error is not null) resolved.TrySetException(new Exception("Subtitle resolve failed: " + result.Error.ErrorCode)); else resolved.TrySetResult(result.Tracks.Count > 0); };
+        mediaSource.ExternalTimedTextSources.Add(subtitles);
+        mediaPlayer.Source = new Windows.Media.Playback.MediaPlaybackItem(mediaSource);
+        mediaPlayer.Play();
+        if (!await resolved.Task.WaitAsync(TimeSpan.FromSeconds(15))) throw new Exception("Subtitle track missing");
+        mediaPlayer.Pause(); mediaPlayer.Source = null;
+        Console.WriteLine("PASS: local SRT resolves as a real timed-text track");
+    }
     foreach (var format in new[] { "MP4", "WMV", "MP3" })
     {
         var path = Path.Combine(root, "video-output." + format.ToLowerInvariant()); File.WriteAllBytes(path, []);

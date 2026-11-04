@@ -11,6 +11,8 @@ public sealed partial class MainWindow
     private bool playlistBusy;
     private List<string> playbackQueue = [];
     private int queueIndex = -1;
+    private bool shufflePlaylist;
+    private bool repeatPlaylist;
 
     private void RenderPlaylists()
     {
@@ -24,6 +26,21 @@ public sealed partial class MainWindow
             await playlists.SaveAsync([.. playlists.Items, new Playlist(Guid.NewGuid().ToString("N"), name.Text.Trim(), [])]);
         });
         MediaBody.Children.Add(create);
+        var shuffle = new CheckBox { Content = "Shuffle", IsChecked = shufflePlaylist };
+        shuffle.Checked += (_, _) => shufflePlaylist = true; shuffle.Unchecked += (_, _) => shufflePlaylist = false;
+        var repeat = new CheckBox { Content = "Repeat playlist", IsChecked = repeatPlaylist };
+        repeat.Checked += (_, _) => repeatPlaylist = true; repeat.Unchecked += (_, _) => repeatPlaylist = false;
+        MediaBody.Children.Add(shuffle); MediaBody.Children.Add(repeat);
+        var import = new Button { Content = "Import M3U playlist", IsEnabled = !playlistBusy && playlists.Warning is null };
+        import.Click += async (_, _) => await PlaylistAction(async () =>
+        {
+            var picker = new FileOpenPicker(); picker.FileTypeFilter.Add(".m3u"); picker.FileTypeFilter.Add(".m3u8");
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
+            var file = await picker.PickSingleFileAsync(); if (file is null || closed) return;
+            if ((await file.GetBasicPropertiesAsync()).Size > 4_000_000) throw new InvalidDataException("Playlist is too large.");
+            var tracks = PlaylistExchange.Read(await File.ReadAllTextAsync(file.Path), file.Path);
+            await playlists.SaveAsync([.. playlists.Items, new Playlist(Guid.NewGuid().ToString("N"), Path.GetFileNameWithoutExtension(file.Name), tracks)]);
+        }); MediaBody.Children.Add(import);
         MediaBody.Children.Add(new TextBlock { Text = playlists.Warning ?? "Playlists reference your MP3 files. Removing a track or playlist does not delete audio files.", TextWrapping = TextWrapping.Wrap, Opacity = .7 });
         foreach (var list in playlists.Items)
         {
@@ -35,7 +52,13 @@ public sealed partial class MainWindow
                 var b = new Button { Content = title, IsEnabled = enabled && !playlistBusy };
                 b.Click += async (_, _) => await PlaylistAction(run); actions.Children.Add(b);
             }
-            Action("Play", async () => { playbackQueue = list.Tracks.ToList(); queueIndex = -1; await NextPlaylistTrack(); }, list.Tracks.Count > 0);
+            Action("Play", async () => { playbackQueue = shufflePlaylist ? list.Tracks.OrderBy(_ => Random.Shared.Next()).ToList() : list.Tracks.ToList(); queueIndex = -1; await NextPlaylistTrack(); }, list.Tracks.Count > 0);
+            Action("Export M3U", async () =>
+            {
+                var picker = new FileSavePicker { SuggestedFileName = list.Name }; picker.FileTypeChoices.Add("M3U8 playlist", new List<string> { ".m3u8" });
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
+                var file = await picker.PickSaveFileAsync(); if (file is not null) await File.WriteAllTextAsync(file.Path, PlaylistExchange.Write(list.Tracks));
+            });
             Action("Add MP3s", async () =>
             {
                 var picker = new FileOpenPicker(); picker.FileTypeFilter.Add(".mp3");
@@ -60,7 +83,7 @@ public sealed partial class MainWindow
             {
                 var index = i;
                 var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-                row.Children.Add(new TextBlock { Text = $"{i + 1}. {Path.GetFileName(list.Tracks[i])}" + (File.Exists(list.Tracks[i]) ? "" : " (missing)"), VerticalAlignment = VerticalAlignment.Center });
+                row.Children.Add(new TextBlock { Width = 280, TextTrimming = TextTrimming.CharacterEllipsis, Text = $"{i + 1}. {Path.GetFileName(list.Tracks[i])}" + (File.Exists(list.Tracks[i]) ? "" : " (missing)"), VerticalAlignment = VerticalAlignment.Center });
                 void TrackAction(string label, Func<List<string>, List<string>> change, bool enabled)
                 {
                     var b = new Button { Content = label, IsEnabled = enabled && playlists.Warning is null && !playlistBusy };
@@ -83,6 +106,8 @@ public sealed partial class MainWindow
     }
     private async Task NextPlaylistTrack()
     {
+        if (closed) return;
+        if (repeatPlaylist && queueIndex + 1 >= playbackQueue.Count && playbackQueue.Any(File.Exists)) queueIndex = -1;
         while (++queueIndex < playbackQueue.Count)
         {
             var path = playbackQueue[queueIndex];
@@ -94,3 +119,4 @@ public sealed partial class MainWindow
         PlaybackStatus.Text = "Playlist ended. Missing files were skipped.";
     }
 }
+
