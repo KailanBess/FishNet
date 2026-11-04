@@ -15,8 +15,11 @@ public sealed partial class MainWindow
     {
         Root.Loaded -= InitializeHub;
         appearance.Load(); appearance.Apply(Root);
-        AppearanceBody.Children.Add(appearance.Editor(Root, RenderLibrary, ShowError));
+        AppearanceBody.Children.Add(appearance.Editor(Root, () => { RenderLibrary(); RenderMedia(); }, ShowError));
         await library.LoadAsync();
+        await mediaCatalog.LoadAsync(); mediaReady = true;
+        MediaNavigation.SelectedItem = MediaNavigation.MenuItems[0]; RenderMedia();
+        if (mediaCatalog.Warning is not null) ShowError(mediaCatalog.Warning);
         RenderLibrary();
         if (library.Warning is not null) ShowError(library.Warning);
     }
@@ -93,7 +96,7 @@ public sealed partial class MainWindow
                 finally { libraryBusy = false; RenderLibrary(); }
             };
             actions.Children.Add(launch); actions.Children.Add(edit); actions.Children.Add(remove); card.Children.Add(actions);
-            LibraryBody.Children.Add(new Border { Child = card, Padding = new Thickness(20), CornerRadius = new CornerRadius(16), Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255,16,36,47)) });
+            LibraryBody.Children.Add(new Border { Child = card, Padding = new Thickness(20), CornerRadius = new CornerRadius(16), Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255,43,43,48)) });
         }
     }
     private async Task CreateCollection()
@@ -145,3 +148,4 @@ public sealed partial class MainWindow
         await library.SaveAsync(next);
     }
 }
+

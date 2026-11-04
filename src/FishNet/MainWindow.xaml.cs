@@ -15,6 +15,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "FishNet.ico"));
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1120, 780));
         Root.Loaded += InitializeHub;
         PlayerView.SetMediaPlayer(player);
@@ -46,19 +47,7 @@ public sealed partial class MainWindow : Window
                 picker.FileTypeFilter.Add(extension);
             var file = await picker.PickSingleFileAsync();
             if (file is null || closed) return;
-            var next = MediaSource.CreateFromStorageFile(file);
-            player.Pause();
-            player.Source = null;
-            source?.Dispose();
-            source = next;
-            Notice.IsOpen = false;
-            NowPlaying.Text = file.Name;
-            PlaybackStatus.Text = "Opening media…";
-            EmptyState.Visibility = Visibility.Collapsed;
-            PlayerView.Visibility = Visibility.Visible;
-            CloseButton.IsEnabled = true;
-            player.Source = source;
-            player.Play();
+            await PlayLocalAsync(file);
         }
         catch (Exception ex)
         {
@@ -97,7 +86,7 @@ public sealed partial class MainWindow : Window
         EmptyState.Visibility = Visibility.Visible;
         CloseButton.IsEnabled = false;
         NowPlaying.Text = "Nothing playing";
-        PlaybackStatus.Text = "LOCAL PLAYBACK · PREVIEW 0.1";
+        PlaybackStatus.Text = "LOCAL PLAYBACK";
         Notice.IsOpen = false;
     }
 
@@ -108,4 +97,6 @@ public sealed partial class MainWindow : Window
         Notice.IsOpen = true;
     }
 }
+
+
 

@@ -1,6 +1,6 @@
 # FishNet
 
-Standalone native C# / .NET 8 / WinUI 3 media player and app-link library in the Aquarium family. Aquatic dark UI with Player, App library, and Customize tabs. There is no built-in browser and no FishNet updater; Aquarium owns update management.
+Standalone native C# / .NET 8 / WinUI 3 media player and app-link library in the Aquarium family. Reference-based charcoal layout with Home/Music/Videos navigation, an app-link library, customization, and a persistent player. There is no built-in browser and no FishNet updater; Aquarium owns update management.
 
 ## Build and run
 
@@ -44,4 +44,9 @@ References: [Microsoft WinUI media player](https://learn.microsoft.com/windows/a
 Local source XML was checked, but the authoring machine has no discoverable .NET SDK. A Windows GitHub Actions build workflow is included; check its actual result. Playback and visual interaction still require Windows validation.
 
 Smoke checks: play MP3/MP4, pause/seek/volume, cancel file selection, switch/close files, play a damaged file, close during playback. Add an app and browser, create a collection, save an HTTPS website with that browser, restart, filter, edit/move, open externally, and remove. Confirm browser dependency protection and missing-executable errors. Test all customization choices and restart persistence. Back up then corrupt each data file with the app closed; confirm preservation and disabled edits, then restore. Verify no embedded browser or app-specific updater appears.
+
+
+## Reference layout preview
+
+This review branch adds a persistent Recent media catalog, Windows-provided artwork thumbnails when available, music/video filters, native persistent playback, and the matching glossy outlined FishNet icon. Empty libraries remain empty; no sample albums are bundled. Browser links remain external. A real queue and folder import are follow-up work. Existing media/app-link and appearance files remain separate. The PNG master and multi-size ICO are under src/FishNet/Assets.
 
