@@ -17,6 +17,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "FishNet.ico"));
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1120, 780));
+        AquariumWorkspace.Mark(this);
         Root.Loaded += InitializeHub;
         PlayerView.SetMediaPlayer(player);
         player.MediaOpened += MediaOpened;

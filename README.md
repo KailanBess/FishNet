@@ -78,3 +78,6 @@ Windows API reference: https://learn.microsoft.com/en-us/windows/uwp/audio-video
 - Playback tools loads local SRT/VTT subtitles, disables captions, changes playback speed and advances the playlist. Windows caption controls also expose embedded tracks. Native codec/subtitle compatibility varies by file.
 
 TagLibSharp 2.3.0 is dynamically linked for metadata; license and source information ship in Licenses/. See THIRD-PARTY.txt. These tools run locally and do not download or convert service streams.
+
+## Aquarium workspace mode
+Hosting-compatible builds declare workspace protocol 1 and mark only their main window when started by Aquarium with AQUARIUM_HOSTED=1. Aquarium displays that window inside its shell. Home keeps the session running; Resume restores it; Close app uses normal app shutdown. Standalone launch remains unchanged. File pickers can appear as separate owned dialogs. No built-in browser was added.
