@@ -24,7 +24,7 @@ public sealed partial class MainWindow : Window
         player.MediaEnded += MediaEnded;
         Closed += (_, _) =>
         {
-            closed = true;
+            closed = true; cancelConversion = true; conversionCancellation?.Cancel();
             player.MediaOpened -= MediaOpened;
             player.MediaFailed -= MediaFailed;
             player.MediaEnded -= MediaEnded;
@@ -61,8 +61,10 @@ public sealed partial class MainWindow : Window
         if (!closed && source is not null) PlaybackStatus.Text = "Use the player controls for playback, seeking, and volume.";
     });
 
-    private void MediaEnded(MediaPlayer sender, object args) => DispatcherQueue.TryEnqueue(() =>
+    private void MediaEnded(MediaPlayer sender, object args) => DispatcherQueue.TryEnqueue(async () =>
     {
+        if (closed) return;
+        if (playbackQueue.Count > 0) { await NextPlaylistTrack(); return; }
         if (!closed && source is not null) PlaybackStatus.Text = "Playback ended. Replay with the player controls or open another file.";
     });
 
@@ -71,6 +73,7 @@ public sealed partial class MainWindow : Window
         if (!closed && source is not null)
         {
             player.Pause();
+            playbackQueue = []; queueIndex = -1;
             ShowError("Playback failed. This file may be damaged or require a codec not installed in Windows. " + args.ErrorMessage);
             PlaybackStatus.Text = "Unable to play this file. Open another file to continue.";
         }
@@ -78,6 +81,7 @@ public sealed partial class MainWindow : Window
 
     private void CloseMedia(object sender, RoutedEventArgs e)
     {
+        playbackQueue = []; queueIndex = -1;
         player.Pause();
         player.Source = null;
         source?.Dispose();
@@ -97,6 +101,9 @@ public sealed partial class MainWindow : Window
         Notice.IsOpen = true;
     }
 }
+
+
+
 
 
 

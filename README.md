@@ -53,3 +53,18 @@ This review branch adds a persistent Recent media catalog, Windows-provided artw
 
 ## Services
 Services & apps includes built-in Spotify, YouTube and SoundCloud presets. Add a browser first, then add a preset to a collection or use Add custom service for your own HTTPS address. Each saved service keeps its chosen browser and can be renamed, moved or removed. These are external service launchers, not account connections or embedded streaming; provider sign-in and playback happen in your browser. Local playback remains inside FishNet.
+
+## Local converter and MP3 playlists
+
+Use **Converter** to pick a local file, select MP3 (192 kbps), M4A, WAV, FLAC, MP4 or WMV, and choose a destination. The built-in Windows media transcoder performs conversion locally. Audio output can extract a video's audio track. Video uses a 720p preset. Codec/container support depends on Windows and the input; this does not promise every format. Sources are preserved, and conversion uses a temporary file before replacing the selected destination. Progress and cancellation are supported. A save dialog may leave a new empty destination placeholder after cancellation or failure; temporary encoded data is removed when possible. Existing destination contents are replaced only after successful conversion. Service URLs and protected streams are not converter inputs.
+
+Use **Playlists** to create named MP3 playlists, add multiple files, rename, reorder/remove tracks, delete the playlist, and play it in order. Missing files are marked and skipped; a decode error stops playback with an error. Opening a separate file or closing media exits playlist playback. Playlists store references under `%LOCALAPPDATA%\FishNet\playlists.json`; deleting a playlist never deletes the MP3 files. Invalid saved data is preserved with editing disabled. Shuffle, repeat, M3U import/export and crossfade are future features.
+
+Checks:
+```
+dotnet run --project tests/FishNet.MediaTests -c Release
+dotnet run --project tests/FishNet.ConversionTests -c Release
+```
+The Windows-only conversion check generates its own tone/video, exercises the real converter, decodes audio outputs to verify duration, and checks cancellation, invalid input and source overwrite prevention. No user media is used.
+
+Windows API reference: https://learn.microsoft.com/en-us/windows/uwp/audio-video-camera/transcode-media-files

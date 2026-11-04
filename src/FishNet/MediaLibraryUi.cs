@@ -23,10 +23,12 @@ public sealed partial class MainWindow
         MediaPageTitle.Text = mediaPage == "Apps" ? "Services & apps" : mediaPage == "Player" ? "Now playing" : mediaPage;
         AppPane.Visibility = mediaPage == "Apps" ? Visibility.Visible : Visibility.Collapsed;
         AppearancePane.Visibility = mediaPage == "Customize" ? Visibility.Visible : Visibility.Collapsed;
-        MediaPane.Visibility = mediaPage is "Home" or "Music" or "Videos" ? Visibility.Visible : Visibility.Collapsed;
+        MediaPane.Visibility = mediaPage is "Home" or "Music" or "Videos" or "Playlists" or "Converter" ? Visibility.Visible : Visibility.Collapsed;
         PageHost.Visibility = mediaPage == "Player" ? Visibility.Collapsed : Visibility.Visible;
         Grid.SetRow(PlayerContainer, mediaPage == "Player" ? 1 : 2);
         PlayerContainer.Height = mediaPage == "Player" ? double.NaN : 172;
+        if (mediaPage == "Playlists") { RenderPlaylists(); return; }
+        if (mediaPage == "Converter") { RenderConverter(); return; }
         MediaBody.Children.Clear();
         MediaBody.Children.Add(new TextBlock { Text = mediaPage == "Home" ? "Recent" : mediaPage, FontSize = 25, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
         var entries = mediaCatalog.Items.Where(i => (mediaPage == "Home" || i.Kind == mediaPage) && i.Name.Contains(MediaSearch.Text, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -71,8 +73,9 @@ public sealed partial class MainWindow
         }
         catch { /* Missing metadata keeps the honest media-type placeholder. */ }
     }
-    private async Task PlayLocalAsync(StorageFile file)
+    private async Task PlayLocalAsync(StorageFile file, bool fromPlaylist = false)
     {
+        if (!fromPlaylist) { playbackQueue = []; queueIndex = -1; }
         var next = Windows.Media.Core.MediaSource.CreateFromStorageFile(file);
         player.Pause(); player.Source = null; source?.Dispose(); source = next;
         Notice.IsOpen = false; NowPlaying.Text = file.Name; PlaybackStatus.Text = "Opening media…";
@@ -82,4 +85,5 @@ public sealed partial class MainWindow
         catch (Exception ex) { ShowError("Playback started, but the media library was not saved: " + ex.Message); }
     }
 }
+
 

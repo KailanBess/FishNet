@@ -16,6 +16,8 @@ jobs:
       - uses: microsoft/setup-msbuild@v2
       - name: Check local media catalog persistence
         run: dotnet run --project tests/FishNet.MediaTests/FishNet.MediaTests.csproj -c Release
+      - name: Check native media conversion
+        run: dotnet run --project tests/FishNet.ConversionTests/FishNet.ConversionTests.csproj -c Release
       - name: Build native Windows media app
         run: msbuild src/FishNet/FishNet.csproj /restore /p:Configuration=Release /p:Platform=x64
       - name: Publish runnable Windows app
@@ -26,3 +28,4 @@ jobs:
           path: artifacts/FishNet/
           if-no-files-found: error
           retention-days: 14
+
