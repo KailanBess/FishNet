@@ -4,18 +4,17 @@ Standalone native C# / .NET 8 / WinUI 3 media player and app-link library in the
 
 ## Build and run
 
-Requires Windows 10 build 19041+ x64, .NET 8 SDK, Visual Studio 2022 17.8+ WinUI C# / Windows application development tooling, and Windows SDK 10.0.26100. NuGet access is required.
+Requires Windows 10 build 19041+ x64, .NET 8 SDK, Visual Studio 2022 17.8+ WinUI C# / Windows application development tooling, and Windows SDK 10.0.26100. NuGet access is required. Run these commands from Developer PowerShell for Visual Studio so its MSBuild and Windows packaging tools are available. The root global.json selects .NET 8 even if newer SDKs are installed.
 
 ```powershell
-dotnet restore .\src\FishNet\FishNet.csproj
-dotnet build .\src\FishNet\FishNet.csproj -c Debug -p:Platform=x64
-dotnet run --project .\src\FishNet\FishNet.csproj -c Debug -p:Platform=x64
+msbuild .\src\FishNet\FishNet.csproj /restore /p:Configuration=Debug /p:Platform=x64
+& .\src\FishNet\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\FishNet.exe
 ```
 
 Or open the csproj in Visual Studio, x64. Publish a self-contained unpackaged folder:
 
 ```powershell
-dotnet publish .\src\FishNet\FishNet.csproj -c Release -r win-x64 --self-contained true -p:Platform=x64 -o .\publish
+msbuild .\src\FishNet\FishNet.csproj /restore /t:Publish /p:Configuration=Release /p:Platform=x64 /p:PublishDir=..\..\publish\
 .\publish\FishNet.exe
 ```
 
@@ -45,3 +44,4 @@ References: [Microsoft WinUI media player](https://learn.microsoft.com/windows/a
 Local source XML was checked, but the authoring machine has no discoverable .NET SDK. A Windows GitHub Actions build workflow is included; check its actual result. Playback and visual interaction still require Windows validation.
 
 Smoke checks: play MP3/MP4, pause/seek/volume, cancel file selection, switch/close files, play a damaged file, close during playback. Add an app and browser, create a collection, save an HTTPS website with that browser, restart, filter, edit/move, open externally, and remove. Confirm browser dependency protection and missing-executable errors. Test all customization choices and restart persistence. Back up then corrupt each data file with the app closed; confirm preservation and disabled edits, then restore. Verify no embedded browser or app-specific updater appears.
+

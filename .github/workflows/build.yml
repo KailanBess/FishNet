@@ -13,5 +13,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
+      - uses: microsoft/setup-msbuild@v2
       - name: Build native Windows media app
-        run: dotnet build src/FishNet/FishNet.csproj -c Release -p:Platform=x64
+        run: msbuild src/FishNet/FishNet.csproj /restore /p:Configuration=Release /p:Platform=x64
+
