@@ -81,3 +81,9 @@ TagLibSharp 2.3.0 is dynamically linked for metadata; license and source informa
 
 ## Aquarium workspace mode
 Hosting-compatible builds declare workspace protocol 1 and mark only their main window when started by Aquarium with AQUARIUM_HOSTED=1. Aquarium displays that window inside its shell. Home keeps the session running; Resume restores it; Close app uses normal app shutdown. Standalone launch remains unchanged. File pickers can appear as separate owned dialogs. No built-in browser was added.
+
+## Playback resume and release packaging
+
+Local media opened directly resumes from its saved position. Playback positions are saved every 15 seconds and requested on media switch, Close media, and app exit; the last periodic checkpoint is the recovery point if Windows terminates the process before a final write completes. Tracks opened from a playlist start at the beginning. Positions within five seconds of the end also restart. Existing media libraries gain an optional position field; relinking preserves it.
+
+The Windows release package workflow creates FishNet-windows-x64.zip and SHA256SUMS.txt. A manual run uploads package artifacts; a v-prefixed tag creates a draft GitHub release for review. Publish after Windows smoke checks so Aquarium can discover the release. Drafts are excluded from its catalog. Packages remain unsigned development builds.
