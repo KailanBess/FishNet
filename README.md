@@ -4,17 +4,17 @@ Standalone native C# / .NET 8 / WinUI 3 media player and app-link library in the
 
 ## Build and run
 
-Requires Windows 10 build 19041+ x64, .NET 8 SDK, Visual Studio 2022 17.8+ WinUI C# / Windows application development tooling, and Windows SDK 10.0.26100. NuGet access is required. Run these commands from Developer PowerShell for Visual Studio so its MSBuild and Windows packaging tools are available. The root global.json selects .NET 8 even if newer SDKs are installed.
+Requires Windows 10 build 19041+ x64 and the .NET 8 SDK. WinUI and Windows build tools restore from NuGet. Use the dotnet SDK commands below; the project uses the .NET SDK WinUI compiler path. The root global.json selects .NET 8 even if newer SDKs are installed.
 
 ```powershell
-msbuild .\src\FishNet\FishNet.csproj /restore /p:Configuration=Debug /p:Platform=x64
+dotnet build .\src\FishNet\FishNet.csproj -c Debug -p:Platform=x64
 & .\src\FishNet\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\FishNet.exe
 ```
 
 Or open the csproj in Visual Studio, x64. Publish a self-contained unpackaged folder:
 
 ```powershell
-msbuild .\src\FishNet\FishNet.csproj /restore /t:Publish /p:Configuration=Release /p:Platform=x64 /p:PublishDir=..\..\publish\
+dotnet publish .\src\FishNet\FishNet.csproj -c Release -p:Platform=x64 -o .\publish
 .\publish\FishNet.exe
 ```
 

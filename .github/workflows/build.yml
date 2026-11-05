@@ -13,19 +13,17 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - uses: microsoft/setup-msbuild@v2
       - name: Check local media catalog persistence
         run: dotnet run --project tests/FishNet.MediaTests/FishNet.MediaTests.csproj -c Release
       - name: Check native media conversion
         run: dotnet run --project tests/FishNet.ConversionTests/FishNet.ConversionTests.csproj -c Release
       - name: Build native Windows media app
-        run: msbuild src/FishNet/FishNet.csproj /restore /p:Configuration=Release /p:Platform=x64
+        run: dotnet build src/FishNet/FishNet.csproj -c Release -p:Platform=x64
       - name: Publish runnable Windows app
-        run: msbuild src/FishNet/FishNet.csproj /restore /t:Publish /p:Configuration=Release /p:Platform=x64 /p:PublishDir=${{ github.workspace }}/artifacts/FishNet/
+        run: dotnet publish src/FishNet/FishNet.csproj -c Release -p:Platform=x64 -o artifacts/FishNet
       - uses: actions/upload-artifact@v4
         with:
           name: FishNet-windows-x64
           path: artifacts/FishNet/
           if-no-files-found: error
           retention-days: 14
-

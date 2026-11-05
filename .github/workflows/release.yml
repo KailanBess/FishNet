@@ -13,10 +13,9 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - uses: microsoft/setup-msbuild@v2
       - name: Publish complete native app
         shell: pwsh
-        run: msbuild src/FishNet/FishNet.csproj /restore /t:Publish /p:Configuration=Release /p:Platform=x64 /p:PublishDir=${{ github.workspace }}/artifacts/FishNet/
+        run: dotnet publish src/FishNet/FishNet.csproj -c Release -p:Platform=x64 -o artifacts/FishNet
       - name: Package and checksum
         shell: pwsh
         run: |
