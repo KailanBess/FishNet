@@ -2,6 +2,8 @@ name: Publish complete FishNet release
 on:
   push:
     tags: ['v*']
+    branches: [main]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -23,10 +25,22 @@ jobs:
       - name: Publish complete self-contained Windows runtime
         shell: pwsh
         run: |
-          msbuild src/FishNet/FishNet.csproj /restore /t:Publish /p:Configuration=Release /p:Platform=x64 /p:PublishDir="$PWD/artifacts/FishNet/"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          ./scripts/Package-Release.ps1 -PublishDirectory artifacts/FishNet -OutputDirectory artifacts/release -Tag $env:GITHUB_REF_NAME
+          New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+          try {
+            msbuild src/FishNet/FishNet.csproj /restore /t:Publish /p:Configuration=Release /p:Platform=x64 /p:PublishDir="$PWD/artifacts/FishNet/" 2>&1 | Tee-Object artifacts/build.log
+            if ($LASTEXITCODE -ne 0) { throw "MSBuild failed with exit code $LASTEXITCODE" }
+            [xml]$project=Get-Content src/FishNet/FishNet.csproj
+            $tag='v'+[string]$project.Project.PropertyGroup.Version
+            if($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne $tag){throw 'Tag/source version mismatch.'}
+            ./scripts/Package-Release.ps1 -PublishDirectory artifacts/FishNet -OutputDirectory artifacts/release -Tag $tag
+          } catch {
+            $reason=$_.Exception.Message
+            "## FishNet release build failed`n$reason" | Add-Content $env:GITHUB_STEP_SUMMARY
+            if(Test-Path artifacts/build.log){'```text' | Add-Content $env:GITHUB_STEP_SUMMARY; Get-Content artifacts/build.log -Tail 45 | Add-Content $env:GITHUB_STEP_SUMMARY; '```' | Add-Content $env:GITHUB_STEP_SUMMARY}
+            throw
+          }
       - name: Publish downloadable app and checksums
+        if: github.ref_type == 'tag'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
