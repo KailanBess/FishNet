@@ -9,7 +9,7 @@ namespace FishNet;
 public sealed class Preferences
 {
     public string Accent { get; set; } = "Mint";
-    public string Background { get; set; } = "Ocean";
+    public string Background { get; set; } = "Charcoal";
     public bool Compact { get; set; }
 }
 
@@ -43,6 +43,7 @@ public sealed class Appearance
         root.Resources["SystemControlHighlightAccentBrush"] = new SolidColorBrush(color);
         if (root is Panel panel) panel.Background = new SolidColorBrush(current.Background switch
         {
+            "Charcoal" => ColorHelper.FromArgb(255, 26, 26, 31),
             "Midnight" => ColorHelper.FromArgb(255, 12, 14, 22),
             "Slate" => ColorHelper.FromArgb(255, 27, 35, 43),
             _ => ColorHelper.FromArgb(255, 9, 21, 29)
@@ -52,7 +53,7 @@ public sealed class Appearance
     {
         var panel = new StackPanel { Spacing = 12 };
         var accent = new ComboBox { Header = "Accent", ItemsSource = new[] { "Mint", "Blue", "Coral" }, SelectedItem = current.Accent };
-        var background = new ComboBox { Header = "Background", ItemsSource = new[] { "Ocean", "Midnight", "Slate" }, SelectedItem = current.Background };
+        var background = new ComboBox { Header = "Background", ItemsSource = new[] { "Charcoal", "Ocean", "Midnight", "Slate" }, SelectedItem = current.Background };
         var compact = new ToggleSwitch { Header = "Compact collection spacing", IsOn = current.Compact };
         async Task Save()
         {
@@ -76,3 +77,4 @@ public sealed class Appearance
         return panel;
     }
 }
+

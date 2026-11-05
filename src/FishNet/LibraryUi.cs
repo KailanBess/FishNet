@@ -15,8 +15,11 @@ public sealed partial class MainWindow
     {
         Root.Loaded -= InitializeHub;
         appearance.Load(); appearance.Apply(Root);
-        AppearanceBody.Children.Add(appearance.Editor(Root, RenderLibrary, ShowError));
+        AppearanceBody.Children.Add(appearance.Editor(Root, () => { RenderLibrary(); RenderMedia(); }, ShowError));
         await library.LoadAsync();
+        await mediaCatalog.LoadAsync(); await playlists.LoadAsync(); mediaReady = true;
+        MediaNavigation.SelectedItem = MediaNavigation.MenuItems[0]; RenderMedia();
+        if (mediaCatalog.Warning is not null) ShowError(mediaCatalog.Warning);
         RenderLibrary();
         if (library.Warning is not null) ShowError(library.Warning);
     }
@@ -24,8 +27,8 @@ public sealed partial class MainWindow
     {
         LibraryBody.Children.Clear();
         LibraryBody.Spacing = appearance.Compact ? 8 : 18;
-        LibraryBody.Children.Add(new TextBlock { Text = "Your apps, in your own currents.", FontSize = 28, TextWrapping = TextWrapping.Wrap });
-        LibraryBody.Children.Add(new TextBlock { Text = "Link desktop apps, add your own browser, and organize them into collections. Nothing is installed or embedded.", TextWrapping = TextWrapping.Wrap });
+        LibraryBody.Children.Add(new TextBlock { Text = "Services, apps & browsers", FontSize = 28, TextWrapping = TextWrapping.Wrap });
+        LibraryBody.Children.Add(new TextBlock { Text = "Choose a ready-made service or add your own. Services open in your added browser; accounts and streaming stay with the provider.", TextWrapping = TextWrapping.Wrap });
         var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         void AddButton(string label, Func<Task> action)
         {
@@ -41,9 +44,28 @@ public sealed partial class MainWindow
         }
         AddButton("Link app", () => AddLink("App"));
         AddButton("Add browser", () => AddLink("Browser"));
-        AddButton("Add website", () => AddLink("Website"));
+        AddButton("Add custom service", () => AddLink("Website"));
         AddButton("New collection", CreateCollection);
         LibraryBody.Children.Add(toolbar);
+        LibraryBody.Children.Add(new TextBlock { Text = "Available services", FontSize = 22 });
+        foreach (var service in ServiceCatalog.BuiltIn)
+        {
+            var row = new StackPanel { Spacing = 6 };
+            row.Children.Add(new TextBlock { Text = service.Name, FontSize = 20 });
+            row.Children.Add(new TextBlock { Text = service.Category + " · " + service.Url, TextWrapping = TextWrapping.Wrap, Opacity = .7 });
+            var add = new Button { Content = "Add to my library", IsEnabled = library.Writable && !libraryBusy };
+            add.Click += async (_, _) =>
+            {
+                if (libraryBusy) return;
+                libraryBusy = true; RenderLibrary();
+                try { await AddLink("Website", service); }
+                catch (Exception ex) { ShowError(ex.Message); }
+                finally { libraryBusy = false; RenderLibrary(); }
+            };
+            row.Children.Add(add);
+            LibraryBody.Children.Add(new Border { Child = row, Padding = new Thickness(16), CornerRadius = new CornerRadius(12), Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255,43,43,48)) });
+        }
+        LibraryBody.Children.Add(new TextBlock { Text = "My library", FontSize = 22 });
         var filter = new ComboBox { Header = "Collection", ItemsSource = new[] { "All collections" }.Concat(library.State.Collections).ToList(), SelectedItem = selectedCollection };
         filter.SelectionChanged += (_, _) => { selectedCollection = filter.SelectedItem?.ToString() ?? "All collections"; RenderLibrary(); };
         LibraryBody.Children.Add(filter);
@@ -93,7 +115,7 @@ public sealed partial class MainWindow
                 finally { libraryBusy = false; RenderLibrary(); }
             };
             actions.Children.Add(launch); actions.Children.Add(edit); actions.Children.Add(remove); card.Children.Add(actions);
-            LibraryBody.Children.Add(new Border { Child = card, Padding = new Thickness(20), CornerRadius = new CornerRadius(16), Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255,16,36,47)) });
+            LibraryBody.Children.Add(new Border { Child = card, Padding = new Thickness(20), CornerRadius = new CornerRadius(16), Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255,43,43,48)) });
         }
     }
     private async Task CreateCollection()
@@ -109,7 +131,7 @@ public sealed partial class MainWindow
     private ContentDialog Dialog(string title, UIElement body) => new()
     { Title = title, Content = body, XamlRoot = Root.XamlRoot, RequestedTheme = ElementTheme.Dark, PrimaryButtonText = "Save", CloseButtonText = "Cancel" };
 
-    private async Task AddLink(string kind)
+    private async Task AddLink(string kind, ServicePreset? service = null)
     {
         string target = "";
         if (kind != "Website")
@@ -121,9 +143,9 @@ public sealed partial class MainWindow
             target = file.Path;
         }
         var body = new StackPanel { Spacing = 12 };
-        var name = new TextBox { Header = "Display name", Text = Path.GetFileNameWithoutExtension(target), MaxLength = 100 };
+        var name = new TextBox { Header = "Display name", Text = service?.Name ?? Path.GetFileNameWithoutExtension(target), MaxLength = 100 };
         var collection = new ComboBox { Header = "Collection", ItemsSource = library.State.Collections, SelectedIndex = 0 };
-        var url = new TextBox { Header = "HTTPS website address", PlaceholderText = "https://…" };
+        var url = new TextBox { Header = "HTTPS service address", PlaceholderText = "https://…", Text = service?.Url ?? "" };
         var browsers = library.State.Apps.Where(a => a.Kind == "Browser").ToList();
         var browser = new ComboBox { Header = "Open with your added browser", ItemsSource = browsers, DisplayMemberPath = "Name", SelectedIndex = browsers.Count > 0 ? 0 : -1 };
         body.Children.Add(name); body.Children.Add(collection);
@@ -145,3 +167,5 @@ public sealed partial class MainWindow
         await library.SaveAsync(next);
     }
 }
+
+
