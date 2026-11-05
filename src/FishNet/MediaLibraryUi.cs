@@ -23,14 +23,16 @@ public sealed partial class MainWindow
         MediaPageTitle.Text = mediaPage == "Apps" ? "Services & apps" : mediaPage == "Player" ? "Now playing" : mediaPage == "PlaybackTools" ? "Playback tools" : mediaPage;
         AppPane.Visibility = mediaPage == "Apps" ? Visibility.Visible : Visibility.Collapsed;
         AppearancePane.Visibility = mediaPage == "Customize" ? Visibility.Visible : Visibility.Collapsed;
-        MediaPane.Visibility = mediaPage is "Home" or "Music" or "Videos" or "Playlists" or "Converter" or "PlaybackTools" ? Visibility.Visible : Visibility.Collapsed;
+        MediaPane.Visibility = mediaPage is "Home" or "Music" or "Videos" or "Playlists" or "Converter" or "PlaybackTools" or "Podcasts" ? Visibility.Visible : Visibility.Collapsed;
         PageHost.Visibility = mediaPage == "Player" ? Visibility.Collapsed : Visibility.Visible;
         Grid.SetRow(PlayerContainer, mediaPage == "Player" ? 1 : 2);
         PlayerContainer.Height = mediaPage == "Player" ? double.NaN : 172;
+        if (mediaPage == "Podcasts") { RenderPodcasts(); return; }
         if (mediaPage == "Playlists") { RenderPlaylists(); return; }
         if (mediaPage == "PlaybackTools") { RenderPlaybackTools(); return; }
         if (mediaPage == "Converter") { RenderConverter(); return; }
         MediaBody.Children.Clear();
+        if (mediaPage == "Home") AddContinueWatching();
         var import = new Button { Content = "Import media folder", IsEnabled = !mediaToolsBusy && mediaCatalog.Warning is null };
         import.Click += async (_, _) => await ImportMediaFolder(); MediaBody.Children.Add(import);
         MediaBody.Children.Add(new TextBlock { Text = mediaPage == "Home" ? "Recent" : mediaPage, FontSize = 25, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
@@ -85,19 +87,26 @@ public sealed partial class MainWindow
         }
         catch { /* Missing metadata keeps the honest media-type placeholder. */ }
     }
-    private async Task PlayLocalAsync(StorageFile file, bool fromPlaylist = false)
+    private async Task PlayLocalAsync(StorageFile file, bool fromPlaylist = false, TimeSpan? resumeAt = null, string? displayName = null, string? progressFile = null)
     {
         if (!fromPlaylist) { playbackQueue = []; queueIndex = -1; }
         var next = Windows.Media.Core.MediaSource.CreateFromStorageFile(file);
+        SaveWatchPosition();
         player.Pause(); player.Source = null; source?.Dispose(); source = next;
-        Notice.IsOpen = false; NowPlaying.Text = file.Name; PlaybackStatus.Text = "Opening media…";
+        activeWatchPositionFile = progressFile ?? (IsLocalVideo(file.Path) ? watchPositionFile : null);
+        watchedPath = activeWatchPositionFile is null ? null : file.Path;
+        pendingWatchPosition = resumeAt;
+        Notice.IsOpen = false; NowPlaying.Text = displayName ?? file.Name; PlaybackStatus.Text = "Opening media…";
         EmptyState.Visibility = Visibility.Collapsed; PlayerView.Visibility = Visibility.Visible; CloseButton.IsEnabled = true;
         playbackItem = new Windows.Media.Playback.MediaPlaybackItem(source);
-        player.Source = playbackItem; player.Play();
-        try { await mediaCatalog.RememberAsync(file.Path); if (mediaReady) RenderMedia(); }
+        player.Source = playbackItem; if (resumeAt is null) player.Play();
+        try { if (progressFile is null) await mediaCatalog.RememberAsync(file.Path); if (mediaReady) RenderMedia(); }
         catch (Exception ex) { ShowError("Playback started, but the media library was not saved: " + ex.Message); }
     }
 }
+
+
+
 
 
 

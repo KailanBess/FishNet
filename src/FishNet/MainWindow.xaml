@@ -7,6 +7,7 @@
         <NavigationViewItem Content="Music" Tag="Music" Icon="Audio"/>
         <NavigationViewItem Content="Videos" Tag="Videos" Icon="Video"/>
         <NavigationViewItem Content="Services &amp; apps" Tag="Apps" Icon="Library"/>
+        <NavigationViewItem Content="Podcasts" Tag="Podcasts" Icon="Audio"/>
         <NavigationViewItem Content="Playlists" Tag="Playlists" Icon="List"/>
         <NavigationViewItem Content="Converter" Tag="Converter" Icon="Switch"/>
         <NavigationViewItem Content="Playback tools" Tag="PlaybackTools" Icon="Setting"/>
@@ -31,6 +32,7 @@
     </NavigationView>
   </Grid>
 </Window>
+
 
 
 

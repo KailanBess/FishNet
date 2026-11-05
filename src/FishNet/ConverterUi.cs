@@ -43,6 +43,12 @@ public sealed partial class MainWindow
         start.Click += async (_, _) => await ConvertMedia(); MediaBody.Children.Add(start);
         var batch = new Button { Content = "Batch convert files…", IsEnabled = !converting };
         batch.Click += async (_, _) => await ConvertBatch(); MediaBody.Children.Add(batch);
+        var playlistBatch = new Button { Content = "Convert to MP3 playlist…", IsEnabled = !converting && !playlistBusy && playlists.Warning is null };
+        playlistBatch.Click += async (_, _) => await ConvertBatch(toPlaylist: true);
+        MediaBody.Children.Add(playlistBatch);
+        var album = new Button { Content = "Convert folder to MP3 playlist…", IsEnabled = playlistBatch.IsEnabled };
+        album.Click += async (_, _) => await ConvertBatch(toPlaylist: true, fromFolder: true);
+        MediaBody.Children.Add(album);
         var cancel = new Button { Content = "Cancel conversion", IsEnabled = converting };
         cancel.Click += (_, _) => { cancelConversion = true; conversionCancellation?.Cancel(); conversionStatus = "Cancelling…"; if (conversionStatusLabel is not null) conversionStatusLabel.Text = conversionStatus; };
         MediaBody.Children.Add(cancel);
@@ -97,4 +103,6 @@ public sealed partial class MainWindow
         }
     }
 }
+
+
 

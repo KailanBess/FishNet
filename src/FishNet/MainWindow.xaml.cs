@@ -25,7 +25,8 @@ public sealed partial class MainWindow : Window
         player.MediaEnded += MediaEnded;
         Closed += (_, _) =>
         {
-            closed = true; cancelConversion = true; conversionCancellation?.Cancel();
+            SaveWatchPosition();
+            closed = true; cancelConversion = true; conversionCancellation?.Cancel(); podcastCancellation?.Cancel();
             player.MediaOpened -= MediaOpened;
             player.MediaFailed -= MediaFailed;
             player.MediaEnded -= MediaEnded;
@@ -59,12 +60,20 @@ public sealed partial class MainWindow : Window
 
     private void MediaOpened(MediaPlayer sender, object args) => DispatcherQueue.TryEnqueue(() =>
     {
+        if (!closed && source is not null && pendingWatchPosition is TimeSpan position)
+        {
+            pendingWatchPosition = null;
+            if (player.PlaybackSession.CanSeek && position < player.PlaybackSession.NaturalDuration)
+                player.PlaybackSession.Position = position;
+            player.Play();
+        }
         if (!closed && source is not null) PlaybackStatus.Text = "Use the player controls for playback, seeking, and volume.";
     });
 
     private void MediaEnded(MediaPlayer sender, object args) => DispatcherQueue.TryEnqueue(async () =>
     {
         if (closed) return;
+        ForgetFinishedPosition();
         if (playbackQueue.Count > 0) { await NextPlaylistTrack(); return; }
         if (!closed && source is not null) PlaybackStatus.Text = "Playback ended. Replay with the player controls or open another file.";
     });
@@ -82,6 +91,9 @@ public sealed partial class MainWindow : Window
 
     private void CloseMedia(object sender, RoutedEventArgs e)
     {
+        SaveWatchPosition();
+        watchedPath = null;
+        pendingWatchPosition = null;
         playbackQueue = []; queueIndex = -1;
         player.Pause();
         player.Source = null;
@@ -103,6 +115,8 @@ public sealed partial class MainWindow : Window
         Notice.IsOpen = true;
     }
 }
+
+
 
 
 
