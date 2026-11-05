@@ -18,6 +18,7 @@ public sealed partial class MainWindow
         AppearanceBody.Children.Add(appearance.Editor(Root, () => { RenderLibrary(); RenderMedia(); }, ShowError));
         await library.LoadAsync();
         await mediaCatalog.LoadAsync(); await playlists.LoadAsync(); mediaReady = true;
+        InitializePlaybackResume();
         MediaNavigation.SelectedItem = MediaNavigation.MenuItems[0]; RenderMedia();
         if (mediaCatalog.Warning is not null) ShowError(mediaCatalog.Warning);
         RenderLibrary();
@@ -167,5 +168,3 @@ public sealed partial class MainWindow
         await library.SaveAsync(next);
     }
 }
-
-

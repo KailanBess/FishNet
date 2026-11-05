@@ -87,6 +87,11 @@ public sealed partial class MainWindow
     }
     private async Task PlayLocalAsync(StorageFile file, bool fromPlaylist = false)
     {
+        await SavePlaybackPositionAsync();
+        if (closed) return;
+        playbackReady = false;
+        resumePath = file.Path;
+        resumeSeconds = fromPlaylist ? 0 : mediaCatalog.Items.FirstOrDefault(i => i.Path.Equals(file.Path, StringComparison.OrdinalIgnoreCase))?.PositionSeconds ?? 0;
         if (!fromPlaylist) { playbackQueue = []; queueIndex = -1; }
         var next = Windows.Media.Core.MediaSource.CreateFromStorageFile(file);
         player.Pause(); player.Source = null; source?.Dispose(); source = next;
@@ -98,8 +103,3 @@ public sealed partial class MainWindow
         catch (Exception ex) { ShowError("Playback started, but the media library was not saved: " + ex.Message); }
     }
 }
-
-
-
-
-

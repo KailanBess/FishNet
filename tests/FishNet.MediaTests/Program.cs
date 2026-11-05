@@ -40,6 +40,18 @@ try
     if (catalog.Items.Count != 3 || catalog.Items[0].Kind != "Music") throw new Exception("Recent ordering, deduplication or media filtering incorrect");
     var reload = new MediaCatalog(root); await reload.LoadAsync();
     if (reload.Items.Count != 3 || reload.Items[1].Kind != "Videos") throw new Exception("Media collection did not persist");
+    var resumePath = reload.Items[0].Path;
+    await reload.SavePositionAsync(resumePath, 42);
+    await reload.RememberAsync(resumePath);
+    var resumeReload = new MediaCatalog(root); await resumeReload.LoadAsync();
+    if (resumeReload.Items[0].PositionSeconds != 42) throw new Exception("Opening media lost the saved position");
+    await Task.WhenAll(resumeReload.SavePositionAsync(resumePath, 84), resumeReload.ImportAsync([Path.Combine(root, "Concurrent.mp3")]));
+    var concurrentReload = new MediaCatalog(root); await concurrentReload.LoadAsync();
+    if (concurrentReload.Items.Count != 4 || concurrentReload.Items.Single(i => i.Path == resumePath).PositionSeconds != 84) throw new Exception("Concurrent position/import update lost data");
+    await concurrentReload.RelinkAsync(resumePath, Path.Combine(root, "Moved.mp3"));
+    if (concurrentReload.Items.Single(i => i.Path.EndsWith("Moved.mp3")).PositionSeconds != 84) throw new Exception("Relink lost playback position");
+    try { await concurrentReload.SavePositionAsync(resumePath, double.NaN); throw new Exception("NaN position accepted"); } catch (ArgumentOutOfRangeException) { }
+    Console.WriteLine("PASS: resume persistence, preservation on open/relink, concurrent import, and invalid-position rejection.");
     var path = Path.Combine(root, "media-library.json"); await File.WriteAllTextAsync(path, "invalid JSON");
     var damaged = new MediaCatalog(root); await damaged.LoadAsync(); await damaged.RememberAsync(Path.Combine(root, "Fixture.mp3"));
     if (damaged.Warning is null || await File.ReadAllTextAsync(path) != "invalid JSON") throw new Exception("Invalid saved library was overwritten");
@@ -50,5 +62,3 @@ finally
     if (!Path.GetFullPath(root).StartsWith(Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) || !Path.GetFileName(root).StartsWith("FishNet-media-tests-")) throw new Exception("Unsafe cleanup path");
     Directory.Delete(root, true);
 }
-
-

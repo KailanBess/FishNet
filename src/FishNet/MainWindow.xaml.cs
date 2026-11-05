@@ -25,6 +25,8 @@ public sealed partial class MainWindow : Window
         player.MediaEnded += MediaEnded;
         Closed += (_, _) =>
         {
+            resumeTimer.Stop();
+            _ = SavePlaybackPositionAsync();
             closed = true; cancelConversion = true; conversionCancellation?.Cancel();
             player.MediaOpened -= MediaOpened;
             player.MediaFailed -= MediaFailed;
@@ -59,7 +61,13 @@ public sealed partial class MainWindow : Window
 
     private void MediaOpened(MediaPlayer sender, object args) => DispatcherQueue.TryEnqueue(() =>
     {
-        if (!closed && source is not null) PlaybackStatus.Text = "Use the player controls for playback, seeking, and volume.";
+        if (!closed && source is not null)
+        {
+            var duration = player.PlaybackSession.NaturalDuration.TotalSeconds;
+            if (resumeSeconds > 0 && duration > resumeSeconds + 5) player.PlaybackSession.Position = TimeSpan.FromSeconds(resumeSeconds);
+            resumeSeconds = 0; playbackReady = true;
+            PlaybackStatus.Text = "Use the player controls for playback, seeking, and volume.";
+        }
     });
 
     private void MediaEnded(MediaPlayer sender, object args) => DispatcherQueue.TryEnqueue(async () =>
@@ -82,6 +90,8 @@ public sealed partial class MainWindow : Window
 
     private void CloseMedia(object sender, RoutedEventArgs e)
     {
+        _ = SavePlaybackPositionAsync();
+        resumePath = null; playbackReady = false;
         playbackQueue = []; queueIndex = -1;
         player.Pause();
         player.Source = null;
@@ -103,9 +113,3 @@ public sealed partial class MainWindow : Window
         Notice.IsOpen = true;
     }
 }
-
-
-
-
-
-
