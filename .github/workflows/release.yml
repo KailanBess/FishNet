@@ -1,0 +1,39 @@
+name: Publish complete FishNet release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 8.0.x
+      - uses: microsoft/setup-msbuild@v2
+      - name: Require release source on main
+        run: git merge-base --is-ancestor HEAD origin/main
+      - name: Publish complete self-contained Windows runtime
+        shell: pwsh
+        run: |
+          msbuild src/FishNet/FishNet.csproj /restore /t:Publish /p:Configuration=Release /p:Platform=x64 /p:PublishDir="$PWD/artifacts/FishNet/"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./scripts/Package-Release.ps1 -PublishDirectory artifacts/FishNet -OutputDirectory artifacts/release -Tag $env:GITHUB_REF_NAME
+      - name: Publish downloadable app and checksums
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $notes = 'Complete unsigned FishNet Windows x64 app. Extract the entire ZIP into a new folder and run FishNet.exe. Keep its self-contained runtime files together. Media codecs depend on Windows; native playback and physical display acceptance remain manual checks. User profiles are not included. Verify SHA256SUMS.txt. Aquarium handles app installation and updates.'
+          $notes | Set-Content artifacts/notes.txt -Encoding utf8
+          gh release create $env:GITHUB_REF_NAME ./artifacts/release/FishNet-windows-x64.zip ./artifacts/release/SHA256SUMS.txt ./artifacts/release/BUILD-INFO.json --verify-tag --draft --title "FishNet $env:GITHUB_REF_NAME" --notes-file artifacts/notes.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          gh release edit $env:GITHUB_REF_NAME --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
