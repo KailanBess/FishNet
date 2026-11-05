@@ -35,6 +35,10 @@ jobs:
             ./scripts/Package-Release.ps1 -PublishDirectory artifacts/FishNet -OutputDirectory artifacts/release -Tag $tag
           } catch {
             $reason=$_.Exception.Message
+            $detail=$reason
+            if(Test-Path artifacts/build.log){$detail+=[Environment]::NewLine+((Get-Content artifacts/build.log -Tail 60 | Where-Object {$_ -match '(?i)error|exception|failed'}) -join [Environment]::NewLine)}
+            $escaped=$detail.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Host "::error title=FishNet release diagnostics::$escaped"
             "## FishNet release build failed`n$reason" | Add-Content $env:GITHUB_STEP_SUMMARY
             if(Test-Path artifacts/build.log){'```text' | Add-Content $env:GITHUB_STEP_SUMMARY; Get-Content artifacts/build.log -Tail 45 | Add-Content $env:GITHUB_STEP_SUMMARY; '```' | Add-Content $env:GITHUB_STEP_SUMMARY}
             throw
