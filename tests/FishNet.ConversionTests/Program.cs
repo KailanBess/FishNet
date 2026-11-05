@@ -43,6 +43,17 @@ try
             Console.WriteLine("PASS: MP3 tags/cover art and exact original backup");
         }
     }
+    var presetSizes = new List<long>();
+    foreach (var bitrate in new uint[] { 128000, 256000 })
+    {
+        var path = Path.Combine(root, "preset-" + bitrate + ".mp3");
+        await File.WriteAllBytesAsync(path, []);
+        await MediaConverter.TranscodeAsync(input, await StorageFile.GetFileFromPathAsync(path), "MP3", mp3Bitrate: bitrate);
+        presetSizes.Add(new FileInfo(path).Length);
+    }
+    if (presetSizes[0] < 100 || presetSizes[0] >= presetSizes[1])
+        throw new Exception("The compact preset did not produce a smaller encoded file.");
+    Console.WriteLine("PASS: compact and high quality MP3 presets produce different file sizes");
     var cancelledPath = Path.Combine(root, "cancelled.mp3"); File.WriteAllBytes(cancelledPath, []);
     var composition = new Windows.Media.Editing.MediaComposition();
     composition.Clips.Add(Windows.Media.Editing.MediaClip.CreateFromColor(Windows.UI.Color.FromArgb(255, 20, 40, 60), TimeSpan.FromSeconds(1)));
@@ -91,3 +102,4 @@ finally
         catch (IOException) when (attempt < 5) { GC.Collect(); GC.WaitForPendingFinalizers(); await Task.Delay(250); }
     }
 }
+

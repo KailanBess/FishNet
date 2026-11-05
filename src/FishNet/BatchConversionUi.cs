@@ -14,6 +14,7 @@ public sealed partial class MainWindow
         converting = true; cancelConversion = false; batchResults.Clear();
         var selected = toPlaylist ? "MP3" : conversionFormat;
         var completed = new List<string>();
+        uint mp3Bitrate = 192000;
         try
         {
             IReadOnlyList<StorageFile> files;
@@ -52,7 +53,16 @@ public sealed partial class MainWindow
                         $"{Environment.NewLine}Existing filenames receive a unique suffix.",
                     TextWrapping = TextWrapping.Wrap
                 };
-                if (await Dialog("Review MP3 output names", preview).ShowAsync() != ContentDialogResult.Primary || closed || cancelConversion) return;
+                var presets = new ComboBox
+                {
+                    Header = "MP3 preset", ItemsSource = new[] { "Compact · 128 kbps", "Balanced · 192 kbps", "High quality · 256 kbps" },
+                    SelectedIndex = 1
+                };
+                var review = new StackPanel { Spacing = 8 };
+                review.Children.Add(presets);
+                review.Children.Add(preview);
+                if (await Dialog("Review MP3 outputs", review).ShowAsync() != ContentDialogResult.Primary || closed || cancelConversion) return;
+                mp3Bitrate = presets.SelectedIndex switch { 0 => 128000u, 2 => 256000u, _ => 192000u };
             }
             conversionCancellation = new CancellationTokenSource(); RenderConverter();
             foreach (var input in files)
@@ -69,7 +79,7 @@ public sealed partial class MainWindow
                         conversionStatus = input.Name + $" · {value:0}%";
                         if (conversionStatusLabel is not null) conversionStatusLabel.Text = conversionStatus;
                         if (conversionProgress is not null) { conversionProgress.IsIndeterminate = false; conversionProgress.Value = value; }
-                    }));
+                    }), mp3Bitrate: mp3Bitrate);
                     conversionCancellation.Token.ThrowIfCancellationRequested();
                     await temporary.RenameAsync(Path.GetFileNameWithoutExtension(input.Name) + "-converted" + extension, NameCollisionOption.GenerateUniqueName);
                     completed.Add(temporary.Path);
@@ -125,6 +135,7 @@ public sealed partial class MainWindow
         finally { playlistBusy = false; }
     }
 }
+
 
 
 

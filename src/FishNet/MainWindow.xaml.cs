@@ -25,8 +25,9 @@ public sealed partial class MainWindow : Window
         player.MediaEnded += MediaEnded;
         Closed += (_, _) =>
         {
+            closed = true;
             SaveWatchPosition();
-            closed = true; cancelConversion = true; conversionCancellation?.Cancel(); podcastCancellation?.Cancel();
+            cancelConversion = true; conversionCancellation?.Cancel(); podcastCancellation?.Cancel();
             player.MediaOpened -= MediaOpened;
             player.MediaFailed -= MediaFailed;
             player.MediaEnded -= MediaEnded;
@@ -115,6 +116,7 @@ public sealed partial class MainWindow : Window
         Notice.IsOpen = true;
     }
 }
+
 
 
 
