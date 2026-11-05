@@ -4,7 +4,7 @@ Standalone native C# / .NET 8 / WinUI 3 media player and app-link library in the
 
 ## Download
 
-The v0.3.0 release workflow publishes `FishNet-windows-x64.zip`, SHA-256 checksums and build metadata after a Windows publish succeeds. Extract the whole unsigned app folder and run FishNet.exe. Native playback/visual acceptance remains a manual check.
+The v0.3.1 release workflow publishes `FishNet-windows-x64.zip`, SHA-256 checksums and build metadata after a Windows publish succeeds. Extract the whole unsigned app folder and run FishNet.exe. Native playback/visual acceptance remains a manual check.
 
 ## Build and run
 
