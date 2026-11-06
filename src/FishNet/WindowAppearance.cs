@@ -15,7 +15,7 @@ public sealed partial class MainWindow
     {
         var accent = new SolidColorBrush(appearance.Accent);
         Wordmark.Foreground = accent;
-        MediaSurface.Background = appearance.SurfaceBrush;
+        PlayerContainer.Background = MediaNavigation.Background = appearance.SurfaceBrush;
         Root.Background = appearance.PageBrush;
 
         var border = appearance.BorderColor;

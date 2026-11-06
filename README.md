@@ -49,3 +49,7 @@ Source project/XAML XML and release scripts were checked. The Windows release wo
 
 Smoke checks: play MP3/MP4, pause/seek/volume, cancel file selection, switch/close files, play a damaged file, close during playback. Add an app and browser, create a collection, save an HTTPS website with that browser, restart, filter, edit/move, open externally, and remove. Confirm browser dependency protection and missing-executable errors. Test all customization choices and restart persistence. Back up then corrupt each data file with the app closed; confirm preservation and disabled edits, then restore. Verify no embedded browser or app-specific updater appears.
 
+
+## Media library and tools
+
+Use **Home**, **Music**, and **Videos** to browse local media. Import a folder or open an individual file. Use **Playlists** for saved playback order and M3U exchange, **Converter** for compatible local files, and **Podcasts** for user-added HTTPS RSS feeds. **Services & apps** opens linked services in the user-selected external browser. Output formats and playback codecs depend on Windows capabilities.

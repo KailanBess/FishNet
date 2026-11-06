@@ -1,27 +1,38 @@
 <Window x:Class="FishNet.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="FishNet">
-  <Grid x:Name="Root" RequestedTheme="Dark" Background="#09151D">
-    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-    <InfoBar x:Name="Notice" Margin="32,16,32,0" IsOpen="False" IsClosable="True"/>
-    <Pivot Grid.Row="1" Margin="16"><PivotItem Header="Player"><Grid Padding="16" RowSpacing="18">
-    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-    <Grid ColumnSpacing="24"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-      <StackPanel Spacing="6"><TextBlock x:Name="Wordmark" Text="◉  FishNet" Foreground="{StaticResource AquariumAccent}" FontSize="30" FontWeight="SemiBold"/><TextBlock Text="Your media. A little more serene." Foreground="#A0B8C3"/></StackPanel>
-      <Button x:Name="OpenButton" Grid.Column="1" Content="Open local media" Click="OpenFile" VerticalAlignment="Center"/>
-    </Grid>
-
-    <Border x:Name="MediaSurface" Grid.Row="2" Background="#10242F" CornerRadius="16" BorderBrush="#22414E" BorderThickness="1">
-      <Grid><TextBlock x:Name="EmptyState" Text="Drop into something good.&#x0a;Open a local audio or video file to begin." TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#A0B8C3" FontSize="22" Margin="24"/>
-        <MediaPlayerElement x:Name="PlayerView" Visibility="Collapsed" AreTransportControlsEnabled="True" AutoPlay="False"/>
+  <Grid x:Name="Root" RequestedTheme="Dark" Background="#202020">
+    <NavigationView x:Name="MediaNavigation" PaneDisplayMode="Left" OpenPaneLength="234" CompactPaneLength="64" IsBackButtonVisible="Collapsed" IsSettingsVisible="True" SelectionChanged="NavigateMedia">
+      <NavigationView.PaneHeader><StackPanel Margin="18,24,16,20" Spacing="18"><StackPanel Orientation="Horizontal" Spacing="10"><Image Source="Assets/FishNet.png" Width="32" Height="32"/><TextBlock x:Name="Wordmark" Text="FishNet" FontSize="23" VerticalAlignment="Center"/></StackPanel><TextBox x:Name="MediaSearch" PlaceholderText="Search your media" TextChanged="SearchMedia"/></StackPanel></NavigationView.PaneHeader>
+      <NavigationView.MenuItems>
+        <NavigationViewItem Content="Home" Tag="Home" Icon="Home"/>
+        <NavigationViewItem Content="Music" Tag="Music" Icon="Audio"/>
+        <NavigationViewItem Content="Videos" Tag="Videos" Icon="Video"/>
+        <NavigationViewItem Content="Services &amp; apps" Tag="Apps" Icon="Library"/>
+        <NavigationViewItem Content="Podcasts" Tag="Podcasts" Icon="Audio"/>
+        <NavigationViewItem Content="Playlists" Tag="Playlists" Icon="List"/>
+        <NavigationViewItem Content="Converter" Tag="Converter" Icon="Switch"/>
+        <NavigationViewItem Content="Playback tools" Tag="PlaybackTools" Icon="Setting"/>
+        <NavigationViewItem Content="Now playing" Tag="Player" Icon="Play"/>
+      </NavigationView.MenuItems>
+      <Grid Padding="28,24,28,18" RowSpacing="18">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <StackPanel Spacing="12"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock x:Name="MediaPageTitle" Text="Home" FontSize="36" FontWeight="SemiBold"/><Button x:Name="OpenButton" Grid.Column="1" Content="Open media" Click="OpenFile" VerticalAlignment="Center"/></Grid><InfoBar x:Name="Notice" IsOpen="False" IsClosable="True"/></StackPanel>
+        <Grid x:Name="PageHost" Grid.Row="1">
+          <ScrollViewer x:Name="MediaPane"><StackPanel x:Name="MediaBody" Spacing="20"/></ScrollViewer>
+          <ScrollViewer x:Name="AppPane" Visibility="Collapsed"><StackPanel x:Name="LibraryBody" Spacing="18"/></ScrollViewer>
+          <ScrollViewer x:Name="AppearancePane" Visibility="Collapsed"><StackPanel x:Name="AppearanceBody" Spacing="16"><TextBlock Text="Make FishNet yours" FontSize="24"/><TextBlock Text="Updates are managed in Aquarium."/></StackPanel></ScrollViewer>
+        </Grid>
+        <Border x:Name="PlayerContainer" Grid.Row="2" Height="172" Background="#2B2B30" BorderBrush="#414148" BorderThickness="1" CornerRadius="12" Padding="16,12">
+          <Grid RowSpacing="8"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock x:Name="NowPlaying" Text="Nothing playing" FontSize="17" TextTrimming="CharacterEllipsis"/><Button x:Name="CloseButton" Grid.Column="1" Content="Close media" Click="CloseMedia" IsEnabled="False"/></Grid>
+            <Grid Grid.Row="1"><TextBlock x:Name="EmptyState" Text="Open a local audio or video file to begin." Foreground="#AAAAAF" VerticalAlignment="Center" TextWrapping="Wrap"/><MediaPlayerElement x:Name="PlayerView" Visibility="Collapsed" AreTransportControlsEnabled="True" AutoPlay="False"/></Grid>
+            <TextBlock x:Name="PlaybackStatus" Grid.Row="2" Text="LOCAL PLAYBACK" Foreground="#AAAAAF" FontSize="11" TextWrapping="Wrap"/>
+          </Grid>
+        </Border>
       </Grid>
-    </Border>
-    <Grid Grid.Row="3"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-      <StackPanel Spacing="4"><TextBlock x:Name="NowPlaying" Text="Nothing playing" FontSize="18" TextTrimming="CharacterEllipsis"/><TextBlock x:Name="PlaybackStatus" Text="LOCAL PLAYBACK · PREVIEW 0.1" Foreground="#A0B8C3" FontSize="11"/></StackPanel>
-      <Button x:Name="CloseButton" Grid.Column="1" Content="Close media" Click="CloseMedia" IsEnabled="False"/>
-    </Grid>
-    <TextBlock Grid.Row="4" Text="FishNet is a standalone Aquarium companion. Link apps and browsers in App library. Updates are managed by Aquarium." TextWrapping="Wrap" Foreground="#8CA9B5" FontSize="12"/>
-  </Grid></PivotItem>
-      <PivotItem Header="App library"><ScrollViewer><StackPanel x:Name="LibraryBody" Margin="16" Spacing="18"/></ScrollViewer></PivotItem>
-      <PivotItem Header="Customize"><ScrollViewer><StackPanel x:Name="AppearanceBody" Margin="16" Spacing="16"><TextBlock Text="Make FishNet yours" FontSize="28"/><TextBlock Text="Updates are managed in Aquarium."/></StackPanel></ScrollViewer></PivotItem>
-    </Pivot>
+    </NavigationView>
   </Grid>
 </Window>
+
+
+
+
