@@ -44,14 +44,18 @@ jobs:
             throw
           }
       - name: Publish downloadable app and checksums
-        if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag' || github.ref == 'refs/heads/main'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $notes = 'Complete unsigned FishNet Windows x64 app. Extract the entire ZIP into a new folder and run FishNet.exe. Keep its self-contained runtime files together. Media codecs depend on Windows; native playback and physical display acceptance remain manual checks. User profiles are not included. Verify SHA256SUMS.txt. Aquarium handles app installation and updates.'
           $notes | Set-Content artifacts/notes.txt -Encoding utf8
-          gh release create $env:GITHUB_REF_NAME ./artifacts/release/FishNet-windows-x64.zip ./artifacts/release/SHA256SUMS.txt ./artifacts/release/BUILD-INFO.json --verify-tag --draft --title "FishNet $env:GITHUB_REF_NAME" --notes-file artifacts/notes.txt
+          $tag = 'v' + (Get-Content artifacts/release/BUILD-INFO.json -Raw | ConvertFrom-Json).version
+          if ($env:GITHUB_REF_TYPE -eq 'branch' -and $tag -ne 'v0.3.2') { return }
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) { return }
+          gh release create $tag ./artifacts/release/FishNet-windows-x64.zip ./artifacts/release/SHA256SUMS.txt ./artifacts/release/BUILD-INFO.json --target $env:GITHUB_SHA --draft --title "FishNet $tag" --notes-file artifacts/notes.txt
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          gh release edit $env:GITHUB_REF_NAME --draft=false --latest
+          gh release edit $tag --draft=false --latest
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
