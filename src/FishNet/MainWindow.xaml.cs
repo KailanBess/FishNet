@@ -15,7 +15,9 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "FishNet.ico"));
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1120, 780));
+        AquariumWorkspace.Mark(this);
         Root.Loaded += InitializeHub;
         PlayerView.SetMediaPlayer(player);
         player.MediaOpened += MediaOpened;
@@ -24,6 +26,8 @@ public sealed partial class MainWindow : Window
         Closed += (_, _) =>
         {
             closed = true;
+            SaveWatchPosition();
+            cancelConversion = true; conversionCancellation?.Cancel(); podcastCancellation?.Cancel();
             player.MediaOpened -= MediaOpened;
             player.MediaFailed -= MediaFailed;
             player.MediaEnded -= MediaEnded;
@@ -46,19 +50,7 @@ public sealed partial class MainWindow : Window
                 picker.FileTypeFilter.Add(extension);
             var file = await picker.PickSingleFileAsync();
             if (file is null || closed) return;
-            var next = MediaSource.CreateFromStorageFile(file);
-            player.Pause();
-            player.Source = null;
-            source?.Dispose();
-            source = next;
-            Notice.IsOpen = false;
-            NowPlaying.Text = file.Name;
-            PlaybackStatus.Text = "Opening media…";
-            EmptyState.Visibility = Visibility.Collapsed;
-            PlayerView.Visibility = Visibility.Visible;
-            CloseButton.IsEnabled = true;
-            player.Source = source;
-            player.Play();
+            await PlayLocalAsync(file);
         }
         catch (Exception ex)
         {
@@ -69,11 +61,21 @@ public sealed partial class MainWindow : Window
 
     private void MediaOpened(MediaPlayer sender, object args) => DispatcherQueue.TryEnqueue(() =>
     {
+        if (!closed && source is not null && pendingWatchPosition is TimeSpan position)
+        {
+            pendingWatchPosition = null;
+            if (player.PlaybackSession.CanSeek && position < player.PlaybackSession.NaturalDuration)
+                player.PlaybackSession.Position = position;
+            player.Play();
+        }
         if (!closed && source is not null) PlaybackStatus.Text = "Use the player controls for playback, seeking, and volume.";
     });
 
-    private void MediaEnded(MediaPlayer sender, object args) => DispatcherQueue.TryEnqueue(() =>
+    private void MediaEnded(MediaPlayer sender, object args) => DispatcherQueue.TryEnqueue(async () =>
     {
+        if (closed) return;
+        ForgetFinishedPosition();
+        if (playbackQueue.Count > 0) { await NextPlaylistTrack(); return; }
         if (!closed && source is not null) PlaybackStatus.Text = "Playback ended. Replay with the player controls or open another file.";
     });
 
@@ -82,6 +84,7 @@ public sealed partial class MainWindow : Window
         if (!closed && source is not null)
         {
             player.Pause();
+            playbackQueue = []; queueIndex = -1;
             ShowError("Playback failed. This file may be damaged or require a codec not installed in Windows. " + args.ErrorMessage);
             PlaybackStatus.Text = "Unable to play this file. Open another file to continue.";
         }
@@ -89,15 +92,20 @@ public sealed partial class MainWindow : Window
 
     private void CloseMedia(object sender, RoutedEventArgs e)
     {
+        SaveWatchPosition();
+        watchedPath = null;
+        pendingWatchPosition = null;
+        playbackQueue = []; queueIndex = -1;
         player.Pause();
         player.Source = null;
+        playbackItem = null;
         source?.Dispose();
         source = null;
         PlayerView.Visibility = Visibility.Collapsed;
         EmptyState.Visibility = Visibility.Visible;
         CloseButton.IsEnabled = false;
         NowPlaying.Text = "Nothing playing";
-        PlaybackStatus.Text = "LOCAL PLAYBACK · PREVIEW 0.1";
+        PlaybackStatus.Text = "LOCAL PLAYBACK";
         Notice.IsOpen = false;
     }
 
@@ -108,4 +116,12 @@ public sealed partial class MainWindow : Window
         Notice.IsOpen = true;
     }
 }
+
+
+
+
+
+
+
+
 
