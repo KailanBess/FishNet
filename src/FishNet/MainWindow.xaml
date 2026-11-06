@@ -5,11 +5,11 @@
     <Pivot Grid.Row="1" Margin="16"><PivotItem Header="Player"><Grid Padding="16" RowSpacing="18">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <Grid ColumnSpacing="24"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-      <StackPanel Spacing="6"><TextBlock Text="◉  FishNet" Foreground="{StaticResource AquariumAccent}" FontSize="30" FontWeight="SemiBold"/><TextBlock Text="Your media. A little more serene." Foreground="#A0B8C3"/></StackPanel>
+      <StackPanel Spacing="6"><TextBlock x:Name="Wordmark" Text="◉  FishNet" Foreground="{StaticResource AquariumAccent}" FontSize="30" FontWeight="SemiBold"/><TextBlock Text="Your media. A little more serene." Foreground="#A0B8C3"/></StackPanel>
       <Button x:Name="OpenButton" Grid.Column="1" Content="Open local media" Click="OpenFile" VerticalAlignment="Center"/>
     </Grid>
 
-    <Border Grid.Row="2" Background="#10242F" CornerRadius="16" BorderBrush="#22414E" BorderThickness="1">
+    <Border x:Name="MediaSurface" Grid.Row="2" Background="#10242F" CornerRadius="16" BorderBrush="#22414E" BorderThickness="1">
       <Grid><TextBlock x:Name="EmptyState" Text="Drop into something good.&#x0a;Open a local audio or video file to begin." TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#A0B8C3" FontSize="22" Margin="24"/>
         <MediaPlayerElement x:Name="PlayerView" Visibility="Collapsed" AreTransportControlsEnabled="True" AutoPlay="False"/>
       </Grid>
