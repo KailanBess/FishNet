@@ -21,7 +21,7 @@ public sealed class MediaCatalog
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidDataException)
         { Items = []; Warning = "The media library could not be read and was preserved. " + ex.Message; }
     }
-    public Task RememberAsync(string file) => UpdateAsync(() =>
+    public Task RememberAsync(string file) => Warning is not null ? Task.CompletedTask : UpdateAsync(() =>
     {
         var next = Items.Where(item => !item.Path.Equals(file, StringComparison.OrdinalIgnoreCase)).ToList();
         next.Insert(0, new RecentMedia(file, System.IO.Path.GetFileNameWithoutExtension(file),
