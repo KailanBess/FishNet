@@ -14,8 +14,8 @@ public sealed partial class MainWindow
     private async void InitializeHub(object sender, RoutedEventArgs e)
     {
         Root.Loaded -= InitializeHub;
-        appearance.Load(); appearance.Apply(Root);
-        AppearanceBody.Children.Add(appearance.Editor(Root, RenderLibrary, ShowError));
+        appearance.Load(); ApplyAppearance();
+        AppearanceBody.Children.Add(appearance.Editor(() => { ApplyAppearance(); RenderLibrary(); }, ShowError));
         await library.LoadAsync();
         RenderLibrary();
         if (library.Warning is not null) ShowError(library.Warning);
