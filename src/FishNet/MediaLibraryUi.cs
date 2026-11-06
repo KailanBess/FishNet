@@ -20,19 +20,20 @@ public sealed partial class MainWindow
     private void SearchMedia(object sender, TextChangedEventArgs args) { if (mediaReady) RenderMedia(); }
     private void RenderMedia()
     {
-        MediaPageTitle.Text = mediaPage == "Apps" ? "Services & apps" : mediaPage == "Player" ? "Now playing" : mediaPage == "PlaybackTools" ? "Playback tools" : mediaPage;
+        MediaPageTitle.Text = mediaPage == "Queue" ? "Play queue" : mediaPage == "Apps" ? "Services & apps" : mediaPage == "Player" ? "Now playing" : mediaPage == "PlaybackTools" ? "Playback tools" : mediaPage;
         AppPane.Visibility = mediaPage == "Apps" ? Visibility.Visible : Visibility.Collapsed;
         AppearancePane.Visibility = mediaPage == "Customize" ? Visibility.Visible : Visibility.Collapsed;
-        MediaPane.Visibility = mediaPage is "Home" or "Music" or "Videos" or "Playlists" or "Converter" or "PlaybackTools" or "Podcasts" ? Visibility.Visible : Visibility.Collapsed;
+        MediaPane.Visibility = mediaPage is "Home" or "Music" or "Videos" or "Playlists" or "Converter" or "PlaybackTools" or "Podcasts" or "Queue" ? Visibility.Visible : Visibility.Collapsed;
         PageHost.Visibility = mediaPage == "Player" ? Visibility.Collapsed : Visibility.Visible;
         Grid.SetRow(PlayerContainer, mediaPage == "Player" ? 1 : 2);
         PlayerContainer.Height = mediaPage == "Player" ? double.NaN : 172;
+        if (mediaPage == "Queue") { RenderQueue(); return; }
         if (mediaPage == "Podcasts") { RenderPodcasts(); return; }
         if (mediaPage == "Playlists") { RenderPlaylists(); return; }
         if (mediaPage == "PlaybackTools") { RenderPlaybackTools(); return; }
         if (mediaPage == "Converter") { RenderConverter(); return; }
         MediaBody.Children.Clear();
-        if (mediaPage == "Home") AddContinueWatching();
+        if (mediaPage == "Home") { AddContinueWatching(); AddFolderControls(); }
         var import = new Button { Content = "Import media folder", IsEnabled = !mediaToolsBusy && mediaCatalog.Warning is null };
         import.Click += async (_, _) => await ImportMediaFolder(); MediaBody.Children.Add(import);
         MediaBody.Children.Add(new TextBlock { Text = mediaPage == "Home" ? "Recent" : mediaPage, FontSize = 25, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
@@ -72,6 +73,9 @@ public sealed partial class MainWindow
             {
                 var repair = new Button { Content = "Missing · Relink file" }; repair.Click += async (_, _) => await RelinkMedia(entry); card.Children.Add(repair);
             }
+            var queue = new Button { Content = "Add to queue", IsEnabled = File.Exists(entry.Path) };
+            queue.Click += (_, _) => AddToQueue(entry.Path);
+            card.Children.Add(queue);
             grid.Children.Add(card); _ = LoadArtworkAsync(entry, image);
         }
         grid.SizeChanged += (_, _) => Arrange(); MediaBody.Children.Add(grid); Arrange();
@@ -89,7 +93,7 @@ public sealed partial class MainWindow
     }
     private async Task PlayLocalAsync(StorageFile file, bool fromPlaylist = false, TimeSpan? resumeAt = null, string? displayName = null, string? progressFile = null)
     {
-        if (!fromPlaylist) { playbackQueue = []; queueIndex = -1; }
+        playingQueue = fromPlaylist;
         var next = Windows.Media.Core.MediaSource.CreateFromStorageFile(file);
         SaveWatchPosition();
         player.Pause(); player.Source = null; source?.Dispose(); source = next;
@@ -104,11 +108,3 @@ public sealed partial class MainWindow
         catch (Exception ex) { ShowError("Playback started, but the media library was not saved: " + ex.Message); }
     }
 }
-
-
-
-
-
-
-
-

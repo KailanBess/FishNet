@@ -11,6 +11,7 @@ public sealed partial class MainWindow
     private bool playlistBusy;
     private List<string> playbackQueue = [];
     private int queueIndex = -1;
+    private bool playingQueue;
     private bool shufflePlaylist;
     private bool repeatPlaylist;
 
@@ -29,8 +30,20 @@ public sealed partial class MainWindow
         var shuffle = new CheckBox { Content = "Shuffle", IsChecked = shufflePlaylist };
         shuffle.Checked += (_, _) => shufflePlaylist = true; shuffle.Unchecked += (_, _) => shufflePlaylist = false;
         var repeat = new CheckBox { Content = "Repeat playlist", IsChecked = repeatPlaylist };
-        repeat.Checked += (_, _) => repeatPlaylist = true; repeat.Unchecked += (_, _) => repeatPlaylist = false;
+        repeat.Checked += (_, _) => { repeatPlaylist = true; SaveQueue(); }; repeat.Unchecked += (_, _) => { repeatPlaylist = false; SaveQueue(); };
         MediaBody.Children.Add(shuffle); MediaBody.Children.Add(repeat);
+        var smart = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var music = mediaCatalog.Items.Where(item => item.Kind == "Music").ToArray();
+        void SmartQueue(string label, IEnumerable<RecentMedia> matches)
+        {
+            var tracks = matches.Select(item => item.Path).ToArray();
+            var button = new Button { Content = label + " · " + tracks.Length, IsEnabled = tracks.Length > 0 && !playlistBusy };
+            button.Click += async (_, _) => await PlaylistAction(() => PlayTracksAsync(tracks));
+            smart.Children.Add(button);
+        }
+        SmartQueue("Recently played", music.Where(item => item.OpenedAt != DateTimeOffset.MinValue).OrderByDescending(item => item.OpenedAt).Take(50));
+        SmartQueue("Unplayed", music.Where(item => item.OpenedAt == DateTimeOffset.MinValue));
+        MediaBody.Children.Add(smart);
         var import = new Button { Content = "Import M3U playlist", IsEnabled = !playlistBusy && playlists.Warning is null };
         import.Click += async (_, _) => await PlaylistAction(async () =>
         {
@@ -52,7 +65,7 @@ public sealed partial class MainWindow
                 var b = new Button { Content = title, IsEnabled = enabled && !playlistBusy };
                 b.Click += async (_, _) => await PlaylistAction(run); actions.Children.Add(b);
             }
-            Action("Play", async () => { playbackQueue = shufflePlaylist ? list.Tracks.OrderBy(_ => Random.Shared.Next()).ToList() : list.Tracks.ToList(); queueIndex = -1; await NextPlaylistTrack(); }, list.Tracks.Count > 0);
+            Action("Play", () => PlayTracksAsync(list.Tracks), list.Tracks.Count > 0);
             Action("Export M3U", async () =>
             {
                 var picker = new FileSavePicker { SuggestedFileName = list.Name }; picker.FileTypeChoices.Add("M3U8 playlist", new List<string> { ".m3u8" });
@@ -104,18 +117,26 @@ public sealed partial class MainWindow
         try { await action(); } catch (Exception ex) { if (!closed) ShowError(ex.Message); }
         finally { playlistBusy = false; if (!closed && mediaPage == "Playlists") RenderPlaylists(); }
     }
+    private Task PlayTracksAsync(IEnumerable<string> tracks)
+    {
+        playbackQueue = (shufflePlaylist ? tracks.OrderBy(_ => Random.Shared.Next()) : tracks).ToList();
+        queueIndex = -1;
+        SaveQueue();
+        return NextPlaylistTrack();
+    }
+
     private async Task NextPlaylistTrack()
     {
         if (closed) return;
         queueIndex = PlaylistQueue.NextIndex(playbackQueue, queueIndex, repeatPlaylist, File.Exists);
+        SaveQueue();
         if (queueIndex >= 0)
         {
             var path = playbackQueue[queueIndex];
             try { await PlayLocalAsync(await StorageFile.GetFileFromPathAsync(path), true); return; }
-            catch (Exception ex) { ShowError("Could not play playlist track: " + ex.Message); playbackQueue = []; queueIndex = -1; return; }
+            catch (Exception ex) { ShowError("Could not play playlist track: " + ex.Message); playingQueue = false; return; }
         }
-        playbackQueue = []; queueIndex = -1;
+        playingQueue = false;
         PlaybackStatus.Text = "Playlist ended. Missing files were skipped.";
     }
 }
-

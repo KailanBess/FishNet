@@ -53,3 +53,5 @@ Smoke checks: play MP3/MP4, pause/seek/volume, cancel file selection, switch/clo
 ## Media library and tools
 
 Use **Home**, **Music**, and **Videos** to browse local media. Import a folder or open an individual file. Use **Playlists** for saved playback order and M3U exchange, **Converter** for compatible local files, and **Podcasts** for user-added HTTPS RSS feeds. **Services & apps** opens linked services in the user-selected external browser. Output formats and playback codecs depend on Windows capabilities.
+
+**Play queue** remembers its tracks, order, and current item. Resume restarts the saved track. **Watch media folder** checks selected folders while FishNet is open and adds newly found files. Stopping a watch leaves existing media entries and files in place.

@@ -9,6 +9,7 @@
         <NavigationViewItem Content="Services &amp; apps" Tag="Apps" Icon="Library"/>
         <NavigationViewItem Content="Podcasts" Tag="Podcasts" Icon="Audio"/>
         <NavigationViewItem Content="Playlists" Tag="Playlists" Icon="List"/>
+        <NavigationViewItem Content="Play queue" Tag="Queue" Icon="List"/>
         <NavigationViewItem Content="Converter" Tag="Converter" Icon="Switch"/>
         <NavigationViewItem Content="Playback tools" Tag="PlaybackTools" Icon="Setting"/>
         <NavigationViewItem Content="Now playing" Tag="Player" Icon="Play"/>

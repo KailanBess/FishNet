@@ -26,6 +26,7 @@ public sealed partial class MainWindow : Window
         Closed += (_, _) =>
         {
             closed = true;
+            folderTimer?.Stop();
             SaveWatchPosition();
             cancelConversion = true; conversionCancellation?.Cancel(); podcastCancellation?.Cancel();
             player.MediaOpened -= MediaOpened;
@@ -75,7 +76,7 @@ public sealed partial class MainWindow : Window
     {
         if (closed) return;
         ForgetFinishedPosition();
-        if (playbackQueue.Count > 0) { await NextPlaylistTrack(); return; }
+        if (playingQueue && playbackQueue.Count > 0) { await NextPlaylistTrack(); return; }
         if (!closed && source is not null) PlaybackStatus.Text = "Playback ended. Replay with the player controls or open another file.";
     });
 
@@ -84,7 +85,7 @@ public sealed partial class MainWindow : Window
         if (!closed && source is not null)
         {
             player.Pause();
-            playbackQueue = []; queueIndex = -1;
+            playingQueue = false;
             ShowError("Playback failed. This file may be damaged or require a codec not installed in Windows. " + args.ErrorMessage);
             PlaybackStatus.Text = "Unable to play this file. Open another file to continue.";
         }
@@ -95,7 +96,7 @@ public sealed partial class MainWindow : Window
         SaveWatchPosition();
         watchedPath = null;
         pendingWatchPosition = null;
-        playbackQueue = []; queueIndex = -1;
+        playingQueue = false;
         player.Pause();
         player.Source = null;
         playbackItem = null;
@@ -116,12 +117,3 @@ public sealed partial class MainWindow : Window
         Notice.IsOpen = true;
     }
 }
-
-
-
-
-
-
-
-
-

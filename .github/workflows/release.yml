@@ -52,7 +52,7 @@ jobs:
           $notes = 'Complete unsigned FishNet Windows x64 app. Extract the entire ZIP into a new folder and run FishNet.exe. Keep its self-contained runtime files together. Media codecs depend on Windows; native playback and physical display acceptance remain manual checks. User profiles are not included. Verify SHA256SUMS.txt. Aquarium handles app installation and updates.'
           $notes | Set-Content artifacts/notes.txt -Encoding utf8
           $tag = 'v' + (Get-Content artifacts/release/BUILD-INFO.json -Raw | ConvertFrom-Json).version
-          if ($env:GITHUB_REF_TYPE -eq 'branch' -and $tag -ne 'v0.3.3') { return }
+          if ($env:GITHUB_REF_TYPE -eq 'branch' -and $tag -ne 'v0.3.4') { return }
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) { return }
           gh release create $tag ./artifacts/release/FishNet-windows-x64.zip ./artifacts/release/SHA256SUMS.txt ./artifacts/release/BUILD-INFO.json --target $env:GITHUB_SHA --draft --title "FishNet $tag" --notes-file artifacts/notes.txt

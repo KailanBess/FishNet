@@ -18,7 +18,7 @@ public sealed partial class MainWindow
             var picker = new FolderPicker(); picker.FileTypeFilter.Add("*");
             WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
             var folder = await picker.PickSingleFolderAsync(); if (folder is null || closed) return;
-            var files = await Task.Run(() => Directory.EnumerateFiles(folder.Path, "*", new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = System.IO.FileAttributes.ReparsePoint }).Where(p => MediaCatalog.IsAudio(p) || new[] { ".mp4", ".mkv", ".mov", ".wmv", ".m4v", ".avi", ".webm" }.Contains(Path.GetExtension(p), StringComparer.OrdinalIgnoreCase)).Take(10001).ToArray());
+            var files = await Task.Run(() => Directory.EnumerateFiles(folder.Path, "*", new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = System.IO.FileAttributes.ReparsePoint }).Where(p => MediaCatalog.IsAudio(p) || VideoExtensions.Contains(Path.GetExtension(p), StringComparer.OrdinalIgnoreCase)).Take(10001).ToArray());
             await mediaCatalog.ImportAsync(files); RenderMedia();
         }
         catch (Exception ex) { if (!closed) ShowError("Folder import failed: " + ex.Message); }
