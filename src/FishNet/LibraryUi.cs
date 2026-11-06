@@ -17,7 +17,9 @@ public sealed partial class MainWindow
         appearance.Load(); ApplyAppearance();
         AppearanceBody.Children.Add(appearance.Editor(() => { ApplyAppearance(); RenderLibrary(); RenderMedia(); }, ShowError));
         await library.LoadAsync();
+        LoadQueue();
         await mediaCatalog.LoadAsync(); await playlists.LoadAsync(); mediaReady = true;
+        StartFolderWatch();
         MediaNavigation.SelectedItem = MediaNavigation.MenuItems[0]; RenderMedia();
         if (mediaCatalog.Warning is not null) ShowError(mediaCatalog.Warning);
         RenderLibrary();
