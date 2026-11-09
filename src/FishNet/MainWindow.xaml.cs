@@ -23,9 +23,17 @@ public sealed partial class MainWindow : Window
         player.MediaOpened += MediaOpened;
         player.MediaFailed += MediaFailed;
         player.MediaEnded += MediaEnded;
+        var watchTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
+        watchTimer.Tick += (_, _) =>
+        {
+            if (watchedPath is not null && player.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
+                SaveWatchPosition();
+        };
+        watchTimer.Start();
         Closed += (_, _) =>
         {
             closed = true;
+            watchTimer.Stop();
             folderTimer?.Stop();
             SaveWatchPosition();
             cancelConversion = true; conversionCancellation?.Cancel(); podcastCancellation?.Cancel();
