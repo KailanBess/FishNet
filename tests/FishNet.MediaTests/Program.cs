@@ -21,6 +21,17 @@ try
     if (edited.Items[0].Name != "Renamed" || edited.Items[0].Tracks.Single() != second) throw new Exception("Playlist edits not saved");
     try { await edited.SaveAsync([new Playlist("bad", "Bad", [Path.Combine(root, "not-mp3.wav")])]); throw new Exception("Non-MP3 track accepted"); }
     catch (InvalidDataException) { }
+    var music = Path.Combine(root, "music");
+    var rule = new SmartPlaylistRule("river", music, PlayHistoryFilter.Unplayed);
+    var smart = new Playlist("smart", "Unplayed river tracks", [], rule);
+    await edited.SaveAsync([.. edited.Items, smart]);
+    var smartReload = new Playlists(root); await smartReload.LoadAsync();
+    var savedRule = smartReload.Items.Single(item => item.Id == "smart").Rule;
+    if (savedRule != rule) throw new Exception("Smart playlist rules were not persisted");
+    var wanted = new RecentMedia(Path.Combine(music, "River.mp3"), "River", "Music", DateTimeOffset.MinValue);
+    var choices = new[] { wanted, wanted with { Path = Path.Combine(root, "music-other", "River.mp3") },
+        wanted with { Name = "Lake" }, wanted with { Kind = "Videos" }, wanted with { OpenedAt = DateTimeOffset.UtcNow } };
+    if (savedRule.Match(choices).Single() != wanted) throw new Exception("Smart playlist rules did not combine or leaked into a neighboring folder");
     await File.WriteAllTextAsync(Path.Combine(root, "playlists.json"), "damaged");
     var damagedLists = new Playlists(root); await damagedLists.LoadAsync();
     try { await damagedLists.SaveAsync([]); throw new Exception("Damaged playlists overwritten"); }

@@ -27,6 +27,9 @@ public sealed partial class MainWindow
             await playlists.SaveAsync([.. playlists.Items, new Playlist(Guid.NewGuid().ToString("N"), name.Text.Trim(), [])]);
         });
         MediaBody.Children.Add(create);
+        var createSmart = new Button { Content = "New smart playlist", IsEnabled = playlists.Warning is null && !playlistBusy };
+        createSmart.Click += async (_, _) => await PlaylistAction(() => EditSmartPlaylistAsync(null));
+        MediaBody.Children.Add(createSmart);
         var shuffle = new CheckBox { Content = "Shuffle", IsChecked = shufflePlaylist };
         shuffle.Checked += (_, _) => shufflePlaylist = true; shuffle.Unchecked += (_, _) => shufflePlaylist = false;
         var repeat = new CheckBox { Content = "Repeat playlist", IsChecked = repeatPlaylist };
@@ -57,6 +60,7 @@ public sealed partial class MainWindow
         MediaBody.Children.Add(new TextBlock { Text = playlists.Warning ?? "Playlists reference your MP3 files. Removing a track or playlist does not delete audio files.", TextWrapping = TextWrapping.Wrap, Opacity = .7 });
         foreach (var list in playlists.Items)
         {
+            if (list.Rule is not null) { RenderSmartPlaylist(list); continue; }
             var body = new StackPanel { Spacing = 10 };
             body.Children.Add(new TextBlock { Text = list.Name + " · " + list.Tracks.Count + " tracks", FontSize = 22 });
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
@@ -110,6 +114,48 @@ public sealed partial class MainWindow
             MediaBody.Children.Add(new Border { Child = body, Padding = new Thickness(18), CornerRadius = new CornerRadius(12), Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255,43,43,48)) });
         }
     }
+    private async Task EditSmartPlaylistAsync(Playlist? existing)
+    {
+        var name = new TextBox { Header = "Playlist name", Text = existing?.Name ?? "", MaxLength = 100 };
+        var text = new TextBox { Header = "Title contains (optional)", Text = existing?.Rule?.NameContains ?? "", MaxLength = 100 };
+        var folder = new TextBox { Header = "Absolute folder path (optional)", Text = existing?.Rule?.Folder ?? "" };
+        var history = new ComboBox
+        {
+            Header = "Playback history", ItemsSource = new[] { "Any", "Unplayed", "Played" },
+            SelectedIndex = (int)(existing?.Rule?.History ?? PlayHistoryFilter.Any)
+        };
+        var fields = new StackPanel { Spacing = 8 };
+        foreach (var control in new Control[] { name, text, folder, history }) fields.Children.Add(control);
+        if (await Dialog(existing is null ? "New smart playlist" : "Edit smart playlist", fields).ShowAsync() != ContentDialogResult.Primary || closed) return;
+        var path = folder.Text.Trim();
+        if (path.Length > 0 && !Path.IsPathFullyQualified(path)) throw new InvalidDataException("Enter an absolute folder path.");
+        if (path.Length > 0) path = Path.GetFullPath(path);
+        var rule = new SmartPlaylistRule(text.Text.Trim(), path, (PlayHistoryFilter)history.SelectedIndex);
+        var item = new Playlist(existing?.Id ?? Guid.NewGuid().ToString("N"), name.Text.Trim(), [], rule);
+        await playlists.SaveAsync(existing is null ? [.. playlists.Items, item] : playlists.Items.Select(value => value.Id == item.Id ? item : value).ToList());
+    }
+
+    private void RenderSmartPlaylist(Playlist list)
+    {
+        var tracks = list.Rule!.Match(mediaCatalog.Items).Select(item => item.Path).ToArray();
+        var body = new StackPanel { Spacing = 8 };
+        body.Children.Add(new TextBlock { Text = $"{list.Name} · Smart · {tracks.Length} matches", FontSize = 22, TextWrapping = TextWrapping.Wrap });
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var play = new Button { Content = "Play", IsEnabled = tracks.Length > 0 && !playlistBusy };
+        play.Click += async (_, _) => await PlaylistAction(() => PlayTracksAsync(list.Rule.Match(mediaCatalog.Items).Select(item => item.Path)));
+        var edit = new Button { Content = "Edit rules", IsEnabled = !playlistBusy && playlists.Warning is null };
+        edit.Click += async (_, _) => await PlaylistAction(() => EditSmartPlaylistAsync(list));
+        var delete = new Button { Content = "Delete playlist", IsEnabled = !playlistBusy && playlists.Warning is null };
+        delete.Click += async (_, _) => await PlaylistAction(async () =>
+        {
+            if (await Dialog("Delete smart playlist?", new TextBlock { Text = "Only the saved rules are removed. Your music is kept." }).ShowAsync() == ContentDialogResult.Primary)
+                await playlists.SaveAsync(playlists.Items.Where(item => item.Id != list.Id).ToList());
+        });
+        actions.Children.Add(play); actions.Children.Add(edit); actions.Children.Add(delete);
+        body.Children.Add(actions);
+        MediaBody.Children.Add(body);
+    }
+
     private async Task PlaylistAction(Func<Task> action)
     {
         if (playlistBusy) return;

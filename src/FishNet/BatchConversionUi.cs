@@ -107,9 +107,10 @@ public sealed partial class MainWindow
         try
         {
             var existing = playlists.Items.ToList();
+            var manual = existing.Where(list => list.Rule is null).ToArray();
             var target = new ComboBox { Header = "Destination", SelectedIndex = -1 };
             target.Items.Add("Create new playlist");
-            foreach (var list in existing) target.Items.Add(list.Name);
+            foreach (var list in manual) target.Items.Add(list.Name);
             target.SelectedIndex = 0;
             var name = new TextBox { Header = "New playlist name", Text = "Converted MP3s", MaxLength = 100 };
             target.SelectionChanged += (_, _) => name.Visibility = target.SelectedIndex == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -120,7 +121,7 @@ public sealed partial class MainWindow
             if (await Dialog("Save converted tracks to a playlist", body).ShowAsync() != ContentDialogResult.Primary || closed) return;
             if (target.SelectedIndex > 0)
             {
-                var id = existing[target.SelectedIndex - 1].Id;
+                var id = manual[target.SelectedIndex - 1].Id;
                 await playlists.SaveAsync(existing.Select(list => list.Id == id
                     ? list with { Tracks = list.Tracks.Concat(completed).Distinct(StringComparer.OrdinalIgnoreCase).ToList() }
                     : list).ToList());
