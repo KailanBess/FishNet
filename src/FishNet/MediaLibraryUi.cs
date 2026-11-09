@@ -91,14 +91,15 @@ public sealed partial class MainWindow
         }
         catch { /* Missing metadata keeps the honest media-type placeholder. */ }
     }
-    private async Task PlayLocalAsync(StorageFile file, bool fromPlaylist = false, TimeSpan? resumeAt = null, string? displayName = null, string? progressFile = null)
+    private async Task PlayLocalAsync(StorageFile file, bool fromPlaylist = false, TimeSpan? resumeAt = null, string? displayName = null, string? progressFile = null, bool resetWatchPosition = false)
     {
         playingQueue = fromPlaylist;
         var next = Windows.Media.Core.MediaSource.CreateFromStorageFile(file);
         SaveWatchPosition();
         player.Pause(); player.Source = null; source?.Dispose(); source = next;
-        activeWatchPositionFile = progressFile ?? (IsLocalVideo(file.Path) ? watchPositionFile : null);
+        activeWatchPositionFile = progressFile ?? (IsLocalVideo(file.Path) ? VideoPositionFile(file.Path) : null);
         watchedPath = activeWatchPositionFile is null ? null : file.Path;
+        if (resetWatchPosition && activeWatchPositionFile is not null) ClearWatchPosition(activeWatchPositionFile, file.Path);
         pendingWatchPosition = resumeAt;
         Notice.IsOpen = false; NowPlaying.Text = displayName ?? file.Name; PlaybackStatus.Text = "Opening media…";
         EmptyState.Visibility = Visibility.Collapsed; PlayerView.Visibility = Visibility.Visible; CloseButton.IsEnabled = true;

@@ -34,6 +34,7 @@ public sealed partial class MainWindow : Window
         {
             closed = true;
             watchTimer.Stop();
+            SetSleepTimer(null);
             folderTimer?.Stop();
             SaveWatchPosition();
             cancelConversion = true; conversionCancellation?.Cancel(); podcastCancellation?.Cancel();
@@ -102,6 +103,7 @@ public sealed partial class MainWindow : Window
     private void CloseMedia(object sender, RoutedEventArgs e)
     {
         SaveWatchPosition();
+        SetSleepTimer(null);
         watchedPath = null;
         pendingWatchPosition = null;
         playingQueue = false;
