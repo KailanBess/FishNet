@@ -44,34 +44,34 @@ public sealed partial class MainWindow
             var destination = new FolderPicker(); destination.FileTypeFilter.Add("*");
             WinRT.Interop.InitializeWithWindow.Initialize(destination, WinRT.Interop.WindowNative.GetWindowHandle(this));
             var folder = await destination.PickSingleFolderAsync(); if (folder is null || closed) return;
-            if (toPlaylist)
+            var extension = "." + selected.ToLowerInvariant();
+            string OutputName(StorageFile input) => Path.GetFileNameWithoutExtension(input.Name) + "-converted" + extension;
+            var preview = new TextBlock
             {
-                var preview = new TextBlock
-                {
-                    Text = string.Join(Environment.NewLine, files.Take(12).Select(file => Path.GetFileNameWithoutExtension(file.Name) + "-converted.mp3")) +
-                        (files.Count > 12 ? $"{Environment.NewLine}… and {files.Count - 12} more" : "") +
-                        $"{Environment.NewLine}Existing filenames receive a unique suffix.",
-                    TextWrapping = TextWrapping.Wrap
-                };
-                var presets = new ComboBox
-                {
-                    Header = "MP3 preset", ItemsSource = new[] { "Compact · 128 kbps", "Balanced · 192 kbps", "High quality · 256 kbps" },
-                    SelectedIndex = 1
-                };
-                var review = new StackPanel { Spacing = 8 };
-                review.Children.Add(presets);
-                review.Children.Add(preview);
-                if (await Dialog("Review MP3 outputs", review).ShowAsync() != ContentDialogResult.Primary || closed || cancelConversion) return;
+                Text = string.Join(Environment.NewLine, files.Take(12).Select(OutputName)) +
+                    (files.Count > 12 ? $"{Environment.NewLine}… and {files.Count - 12} more" : "") +
+                    $"{Environment.NewLine}Existing filenames receive a unique suffix.",
+                TextWrapping = TextWrapping.Wrap
+            };
+            var presets = new ComboBox
+            {
+                Header = "MP3 preset", ItemsSource = new[] { "Compact · 128 kbps", "Balanced · 192 kbps", "High quality · 256 kbps" },
+                SelectedIndex = 1
+            };
+            var review = new StackPanel { Spacing = 8 };
+            if (toPlaylist) review.Children.Add(presets);
+            review.Children.Add(preview);
+            if (await Dialog("Review batch outputs", review).ShowAsync() != ContentDialogResult.Primary || closed || cancelConversion) return;
+            if (toPlaylist)
                 mp3Bitrate = presets.SelectedIndex switch { 0 => 128000u, 2 => 256000u, _ => 192000u };
-            }
-            conversionCancellation = new CancellationTokenSource(); RenderConverter();
+            conversionCancellation = new CancellationTokenSource();
+            if (mediaPage == "Converter") RenderConverter();
             foreach (var input in files)
             {
                 if (cancelConversion || closed) break;
                 StorageFile? temporary = null;
                 try
                 {
-                    var extension = "." + selected.ToLowerInvariant();
                     temporary = await folder.CreateFileAsync(".fishnet-batch-" + Guid.NewGuid().ToString("N") + extension, CreationCollisionOption.FailIfExists);
                     await MediaConverter.TranscodeAsync(input, temporary, selected, conversionCancellation.Token, value => DispatcherQueue.TryEnqueue(() =>
                     {
@@ -81,7 +81,7 @@ public sealed partial class MainWindow
                         if (conversionProgress is not null) { conversionProgress.IsIndeterminate = false; conversionProgress.Value = value; }
                     }), mp3Bitrate: mp3Bitrate);
                     conversionCancellation.Token.ThrowIfCancellationRequested();
-                    await temporary.RenameAsync(Path.GetFileNameWithoutExtension(input.Name) + "-converted" + extension, NameCollisionOption.GenerateUniqueName);
+                    await temporary.RenameAsync(OutputName(input), NameCollisionOption.GenerateUniqueName);
                     completed.Add(temporary.Path);
                     batchResults.Add("Saved · " + temporary.Path); temporary = null;
                 }
