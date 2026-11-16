@@ -43,7 +43,7 @@ public sealed partial class MainWindow
         var start = new Button { Content = "Convert and save as…", IsEnabled = conversionInput is not null && !converting };
         start.Click += async (_, _) => await ConvertMedia(); MediaBody.Children.Add(start);
         bool unfinished = batchQueue?.Jobs.Any(job => job.Output is null) == true;
-        bool canStartBatch = !converting && !unfinished && queueWarning is null;
+        bool canStartBatch = !converting && !unfinished && conversionQueueWarning is null;
         var batch = new Button { Content = "Batch convert files…", IsEnabled = canStartBatch };
         batch.Click += async (_, _) => await ConvertBatch(); MediaBody.Children.Add(batch);
         var playlistBatch = new Button { Content = "Convert to MP3 playlist…", IsEnabled = canStartBatch && !playlistBusy && playlists.Warning is null };
@@ -58,7 +58,7 @@ public sealed partial class MainWindow
         conversionProgress = new ProgressBar { Minimum = 0, Maximum = 100, IsIndeterminate = converting };
         conversionStatusLabel = new TextBlock { Text = conversionStatus, TextWrapping = TextWrapping.Wrap };
         MediaBody.Children.Add(conversionProgress); MediaBody.Children.Add(conversionStatusLabel);
-        if (queueWarning is not null) MediaBody.Children.Add(new TextBlock { Text = queueWarning, TextWrapping = TextWrapping.Wrap });
+        if (conversionQueueWarning is not null) MediaBody.Children.Add(new TextBlock { Text = conversionQueueWarning, TextWrapping = TextWrapping.Wrap });
         if (batchQueue is not { } queue) return;
         var queueActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         MediaBody.Children.Add(queueActions);
