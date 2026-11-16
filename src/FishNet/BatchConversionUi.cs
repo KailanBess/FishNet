@@ -8,12 +8,12 @@ namespace FishNet;
 public sealed partial class MainWindow
 {
     private ConversionQueue? batchQueue;
-    private string? queueWarning;
+    private string? conversionQueueWarning;
     private bool queueLoaded;
     private async Task ConvertBatch(bool toPlaylist = false, bool fromFolder = false)
     {
         EnsureQueueLoaded();
-        if (converting || queueWarning is not null || batchQueue?.Jobs.Any(job => job.Output is null) == true) return;
+        if (converting || conversionQueueWarning is not null || batchQueue?.Jobs.Any(job => job.Output is null) == true) return;
         converting = true; cancelConversion = false;
         var selected = toPlaylist ? "MP3" : conversionFormat;
         uint mp3Bitrate = 192000;
@@ -81,7 +81,7 @@ public sealed partial class MainWindow
         if (queueLoaded) return;
         queueLoaded = true;
         try { batchQueue = ConversionQueue.Load(); }
-        catch (Exception ex) { queueWarning = "The saved batch queue could not be read. " + ex.Message; }
+        catch (Exception ex) { conversionQueueWarning = "The saved batch queue could not be read. " + ex.Message; }
     }
 
     private async Task ResumeQueue(int? index = null)
