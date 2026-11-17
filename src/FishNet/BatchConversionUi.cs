@@ -68,6 +68,10 @@ public sealed partial class MainWindow
                 mp3Bitrate = presets.SelectedIndex switch { 0 => 128000u, 2 => 256000u, _ => 192000u };
             var queue = new ConversionQueue(folder.Path, selected, mp3Bitrate, toPlaylist,
                 files.Select(file => new ConversionJob(file.Path)).ToList());
+            using var writer = ConversionQueue.AcquireWriter();
+            batchQueue = ConversionQueue.Load();
+            if (batchQueue?.Jobs.Any(job => job.Output is null) == true)
+                throw new InvalidOperationException("Another FishNet window saved an unfinished batch. Review that queue before starting a new batch.");
             queue.Save();
             batchQueue = queue;
             await RunQueuedJobs(queue, Enumerable.Range(0, queue.Jobs.Count));
@@ -91,11 +95,21 @@ public sealed partial class MainWindow
         cancelConversion = false;
         try
         {
+            using var writer = ConversionQueue.AcquireWriter();
+            CheckCurrentQueue(queue);
             var positions = index is int jobIndex ? new[] { jobIndex } : Enumerable.Range(0, queue.Jobs.Count);
             await RunQueuedJobs(queue, positions);
         }
         catch (Exception ex) { conversionStatus = "Batch stopped: " + ex.Message; }
         finally { FinishQueueRun(); }
+    }
+
+    private void CheckCurrentQueue(ConversionQueue shown)
+    {
+        var saved = ConversionQueue.Load();
+        if (shown.Matches(saved)) return;
+        batchQueue = saved;
+        throw new InvalidOperationException("The queue changed in another FishNet window. Review the refreshed queue before trying again.");
     }
 
     private void FinishQueueRun()
