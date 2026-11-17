@@ -72,11 +72,13 @@ public sealed partial class MainWindow
             if (await Dialog("Clear conversion queue", body).ShowAsync() != ContentDialogResult.Primary || closed || converting) return;
             try
             {
+                using var writer = ConversionQueue.AcquireWriter();
+                CheckCurrentQueue(queue);
                 ConversionQueue.Clear();
                 batchQueue = null;
-                if (mediaPage == "Converter") RenderConverter();
             }
             catch (Exception ex) { ShowError(ex.Message); }
+            if (!closed && mediaPage == "Converter") RenderConverter();
         };
         queueActions.Children.Add(clear);
         if (queue.ToPlaylist)
