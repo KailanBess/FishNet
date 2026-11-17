@@ -18,6 +18,7 @@ public sealed partial class MainWindow
 
     private void RenderConverter()
     {
+        EnsureQueueLoaded();
         MediaBody.Children.Clear();
         MediaBody.Children.Add(new TextBlock { Text = "Convert media", FontSize = 26 });
         MediaBody.Children.Add(new TextBlock { Text = "Local conversion using Windows codecs. Availability depends on your file and installed codecs; protected streams and service links are not inputs. Original files are kept.", TextWrapping = TextWrapping.Wrap, Opacity = .7 });
@@ -41,9 +42,11 @@ public sealed partial class MainWindow
         MediaBody.Children.Add(new TextBlock { Text = "Audio: high quality preset. MP3: 192 kbps. Video: 720p preset. A conversion cannot restore quality lost in the source.", TextWrapping = TextWrapping.Wrap, Opacity = .7 });
         var start = new Button { Content = "Convert and save as…", IsEnabled = conversionInput is not null && !converting };
         start.Click += async (_, _) => await ConvertMedia(); MediaBody.Children.Add(start);
-        var batch = new Button { Content = "Batch convert files…", IsEnabled = !converting };
+        bool unfinished = batchQueue?.Jobs.Any(job => job.Output is null) == true;
+        bool canStartBatch = !converting && !unfinished && conversionQueueWarning is null;
+        var batch = new Button { Content = "Batch convert files…", IsEnabled = canStartBatch };
         batch.Click += async (_, _) => await ConvertBatch(); MediaBody.Children.Add(batch);
-        var playlistBatch = new Button { Content = "Convert to MP3 playlist…", IsEnabled = !converting && !playlistBusy && playlists.Warning is null };
+        var playlistBatch = new Button { Content = "Convert to MP3 playlist…", IsEnabled = canStartBatch && !playlistBusy && playlists.Warning is null };
         playlistBatch.Click += async (_, _) => await ConvertBatch(toPlaylist: true);
         MediaBody.Children.Add(playlistBatch);
         var album = new Button { Content = "Convert folder to MP3 playlist…", IsEnabled = playlistBatch.IsEnabled };
@@ -55,7 +58,61 @@ public sealed partial class MainWindow
         conversionProgress = new ProgressBar { Minimum = 0, Maximum = 100, IsIndeterminate = converting };
         conversionStatusLabel = new TextBlock { Text = conversionStatus, TextWrapping = TextWrapping.Wrap };
         MediaBody.Children.Add(conversionProgress); MediaBody.Children.Add(conversionStatusLabel);
-        foreach (var result in batchResults) MediaBody.Children.Add(new TextBlock { Text = result, TextWrapping = TextWrapping.Wrap });
+        if (conversionQueueWarning is not null) MediaBody.Children.Add(new TextBlock { Text = conversionQueueWarning, TextWrapping = TextWrapping.Wrap });
+        if (batchQueue is not { } queue) return;
+        var queueActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        MediaBody.Children.Add(queueActions);
+        var resume = new Button { Content = "Resume unfinished jobs", IsEnabled = unfinished && !converting };
+        resume.Click += async (_, _) => await ResumeQueue();
+        queueActions.Children.Add(resume);
+        var clear = new Button { Content = "Clear saved queue…", IsEnabled = !converting };
+        clear.Click += async (_, _) =>
+        {
+            var body = new TextBlock { Text = "Clear this queue’s history and unfinished jobs? Converted files are kept.", TextWrapping = TextWrapping.Wrap };
+            if (await Dialog("Clear conversion queue", body).ShowAsync() != ContentDialogResult.Primary || closed || converting) return;
+            try
+            {
+                using var writer = ConversionQueue.AcquireWriter();
+                CheckCurrentQueue(queue);
+                ConversionQueue.Clear();
+                batchQueue = null;
+            }
+            catch (Exception ex) { ShowError(ex.Message); }
+            if (!closed && mediaPage == "Converter") RenderConverter();
+        };
+        queueActions.Children.Add(clear);
+        if (queue.ToPlaylist)
+        {
+            var tracks = queue.Jobs.Select(job => job.Output).OfType<string>().Where(File.Exists).ToList();
+            var addTracks = new Button
+            {
+                Content = "Add saved tracks to playlist…",
+                IsEnabled = !converting && !playlistBusy && tracks.Count > 0 && playlists.Warning is null
+            };
+            addTracks.Click += async (_, _) =>
+            {
+                try { await SaveConvertedPlaylist(tracks); }
+                catch (Exception ex) { ShowError(ex.Message); }
+                if (!closed && mediaPage == "Converter") RenderConverter();
+            };
+            queueActions.Children.Add(addTracks);
+        }
+        for (int index = 0; index < queue.Jobs.Count; index++)
+        {
+            int position = index;
+            var job = queue.Jobs[position];
+            var row = new StackPanel { Spacing = 4 };
+            string detail = job.Output is not null ? "Saved · " + job.Output
+                : job.Error is not null ? "Failed · " + job.Error : "Waiting";
+            row.Children.Add(new TextBlock { Text = Path.GetFileName(job.Input) + " · " + detail, TextWrapping = TextWrapping.Wrap });
+            if (job.Error is not null)
+            {
+                var retry = new Button { Content = "Retry " + Path.GetFileName(job.Input), IsEnabled = !converting };
+                retry.Click += async (_, _) => await ResumeQueue(position);
+                row.Children.Add(retry);
+            }
+            MediaBody.Children.Add(row);
+        }
     }
     private async Task ConvertMedia()
     {
