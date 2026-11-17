@@ -25,8 +25,7 @@ public sealed partial class MainWindow
         AppearancePane.Visibility = mediaPage == "Customize" ? Visibility.Visible : Visibility.Collapsed;
         MediaPane.Visibility = mediaPage is "Home" or "Music" or "Videos" or "Playlists" or "Converter" or "PlaybackTools" or "Podcasts" or "Queue" ? Visibility.Visible : Visibility.Collapsed;
         PageHost.Visibility = mediaPage == "Player" ? Visibility.Collapsed : Visibility.Visible;
-        Grid.SetRow(PlayerContainer, mediaPage == "Player" ? 1 : 2);
-        PlayerContainer.Height = mediaPage == "Player" ? double.NaN : 172;
+        UpdatePlayerLayout();
         if (mediaPage == "Queue") { RenderQueue(); return; }
         if (mediaPage == "Podcasts") { RenderPodcasts(); return; }
         if (mediaPage == "Playlists") { RenderPlaylists(); return; }
@@ -91,6 +90,14 @@ public sealed partial class MainWindow
         }
         catch { /* Missing metadata keeps the honest media-type placeholder. */ }
     }
+    private void UpdatePlayerLayout()
+    {
+        bool dedicatedPlayer = mediaPage == "Player";
+        Grid.SetRow(PlayerContainer, dedicatedPlayer ? 1 : 2);
+        PlayerContainer.Height = dedicatedPlayer ? double.NaN : 172;
+        PlayerContainer.Visibility = dedicatedPlayer || source is not null ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private async Task PlayLocalAsync(StorageFile file, bool fromPlaylist = false, TimeSpan? resumeAt = null, string? displayName = null, string? progressFile = null, bool resetWatchPosition = false)
     {
         playingQueue = fromPlaylist;
@@ -105,6 +112,7 @@ public sealed partial class MainWindow
         EmptyState.Visibility = Visibility.Collapsed; PlayerView.Visibility = Visibility.Visible; CloseButton.IsEnabled = true;
         playbackItem = new Windows.Media.Playback.MediaPlaybackItem(source);
         player.Source = playbackItem; if (resumeAt is null) player.Play();
+        UpdatePlayerLayout();
         try { if (progressFile is null) await mediaCatalog.RememberAsync(file.Path); if (mediaReady) RenderMedia(); }
         catch (Exception ex) { ShowError("Playback started, but the media library was not saved: " + ex.Message); }
     }

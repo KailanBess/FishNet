@@ -116,6 +116,7 @@ public sealed partial class MainWindow : Window
         EmptyState.Visibility = Visibility.Visible;
         CloseButton.IsEnabled = false;
         NowPlaying.Text = "Nothing playing";
+        UpdatePlayerLayout();
         PlaybackStatus.Text = "LOCAL PLAYBACK";
         Notice.IsOpen = false;
     }
