@@ -1,0 +1,47 @@
+name: iOS test builds
+
+on:
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build unsigned simulator app
+        run: xcodebuild -project ios/FishNet.xcodeproj -scheme FishNet -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+      - name: Build and package unsigned iPhone and iPad app
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project ios/FishNet.xcodeproj -scheme FishNet -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/fishnet-device" \
+            CODE_SIGNING_ALLOWED=NO CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" build
+          app="$RUNNER_TEMP/fishnet-device/Build/Products/Release-iphoneos/FishNet.app"
+          test -f "$app/Info.plist"
+          test "$(plutil -extract DTPlatformName raw -o - "$app/Info.plist")" = iphoneos
+          executable="$(plutil -extract CFBundleExecutable raw -o - "$app/Info.plist")"
+          lipo -verify_arch arm64 "$app/$executable"
+
+          staging="$(mktemp -d)"
+          mkdir -p "$staging/Payload" "$RUNNER_TEMP/fishnet-download"
+          ditto "$app" "$staging/Payload/FishNet.app"
+          cd "$RUNNER_TEMP/fishnet-download"
+          ditto -c -k --keepParent "$staging/Payload" FishNet-unsigned.ipa
+          unzip -t FishNet-unsigned.ipa
+          unzip -Z -1 FishNet-unsigned.ipa | grep -Fx "Payload/FishNet.app/$executable"
+          shasum -a 256 FishNet-unsigned.ipa > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FishNet-iOS-device
+          path: ${{ runner.temp }}/fishnet-download/
+          compression-level: 0
+          if-no-files-found: error

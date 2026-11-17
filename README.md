@@ -2,6 +2,10 @@
 
 Standalone native C# / .NET 8 / WinUI 3 media player and app-link library in the Aquarium family. Aquatic dark UI with Player, App library, and Customize tabs. There is no built-in browser and no FishNet updater; Aquarium owns update management.
 
+## iPhone and iPad
+
+The native mobile preview lives in [ios](ios/README.md) with its own Xcode project.
+
 ## Download
 
 The v0.3.1 release workflow publishes `FishNet-windows-x64.zip`, SHA-256 checksums and build metadata after a Windows publish succeeds. Extract the whole unsigned app folder and run FishNet.exe. Native playback/visual acceptance remains a manual check.
