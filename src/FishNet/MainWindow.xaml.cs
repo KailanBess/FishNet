@@ -37,6 +37,7 @@ public sealed partial class MainWindow : Window
             watchTimer.Stop();
             SetSleepTimer(null);
             folderTimer?.Stop();
+            artworkCancellation?.Cancel(); artworkCancellation?.Dispose();
             if (audioDevices is not null)
             {
                 audioDevices.Removed -= AudioDeviceRemoved;
@@ -63,7 +64,7 @@ public sealed partial class MainWindow : Window
         {
             var picker = new FileOpenPicker();
             WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
-            foreach (var extension in new[] { ".mp4", ".m4v", ".mov", ".wmv", ".mkv", ".mp3", ".m4a", ".wav", ".flac", ".wma" })
+            foreach (var extension in VideoExtensions.Concat(MediaCatalog.AudioExtensions))
                 picker.FileTypeFilter.Add(extension);
             var file = await picker.PickSingleFileAsync();
             if (file is null || closed) return;

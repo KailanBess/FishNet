@@ -58,14 +58,17 @@ public sealed partial class MainWindow
             foreach (var file in new[] { "media-library.json", "play-queue.json" }) Add(file, changes);
             Add("playlists.json", changes.Concat(folderChanges).DistinctBy(c => c.Previous, StringComparer.OrdinalIgnoreCase).ToArray());
             Add("watched-folders.json", folderChanges);
+            int skippedPositions = 0;
             foreach (var change in changes)
             {
                 var previous = Path.Combine(root, FolderRepair.PositionFile(change.Previous).Replace('/', Path.DirectorySeparatorChar));
                 if (File.Exists(previous))
                 {
+                    if (new FileInfo(previous).Length > 32768) { skippedPositions++; continue; }
                     var next = FolderRepair.PositionFile(change.Replacement);
                     if (File.Exists(Path.Combine(root, next.Replace('/', Path.DirectorySeparatorChar)))) continue;
-                    writes.Add(new(next, FolderRepair.Rewrite(File.ReadAllBytes(previous), [change])));
+                    try { writes.Add(new(next, FolderRepair.Rewrite(File.ReadAllBytes(previous), [change]))); }
+                    catch (JsonException) { skippedPositions++; }
                 }
             }
             var backup = Path.Combine(root, "repair-backups", Guid.NewGuid().ToString("N") + ".json");
@@ -74,7 +77,7 @@ public sealed partial class MainWindow
             await Task.Run(() => FolderRepair.Apply(root, writes));
             await mediaCatalog.LoadAsync(); await playlists.LoadAsync(); LoadQueue();
             watchedFolders = watchedFolders.Select(p => folderChanges.FirstOrDefault(c => c.Previous.Equals(p, StringComparison.OrdinalIgnoreCase))?.Replacement ?? p).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-            Notice.Severity = InfoBarSeverity.Success; Notice.Message = $"Repaired {changes.Count} paths in the library, playlists, queue and saved playback positions. Previous records: {backup}"; Notice.IsOpen = true;
+            Notice.Severity = InfoBarSeverity.Success; Notice.Message = $"Repaired {changes.Count} paths in the library, playlists, queue and readable playback positions. Skipped unreadable/oversized position records: {skippedPositions}; their originals were kept. Previous records: {backup}"; Notice.IsOpen = true;
         }
         catch (Exception ex) { if (!closed) ShowError("Folder repair stopped. " + ex.Message); }
         finally { repairPublishing = false; mediaToolsBusy = false; if (!closed) { folderTimer?.Start(); MediaNavigation.IsEnabled = OpenButton.IsEnabled = true; RenderMedia(); } }

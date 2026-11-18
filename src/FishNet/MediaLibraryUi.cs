@@ -12,6 +12,8 @@ public sealed partial class MainWindow
     private readonly MediaCatalog mediaCatalog = new();
     private bool mediaReady;
     private string mediaPage = "Home";
+    private CancellationTokenSource? artworkCancellation;
+    private static readonly SemaphoreSlim artworkLoads = new(4, 4);
     private void NavigateMedia(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
         mediaPage = args.IsSettingsSelected ? "Customize" : (args.SelectedItem as NavigationViewItem)?.Tag?.ToString() ?? "Home";
@@ -20,6 +22,8 @@ public sealed partial class MainWindow
     private void SearchMedia(object sender, TextChangedEventArgs args) { if (mediaReady) RenderMedia(); }
     private void RenderMedia()
     {
+        artworkCancellation?.Cancel(); artworkCancellation?.Dispose();
+        artworkCancellation = new CancellationTokenSource();
         MediaPageTitle.Text = mediaPage == "Queue" ? "Play queue" : mediaPage == "Apps" ? "Services & apps" : mediaPage == "Player" ? "Now playing" : mediaPage == "PlaybackTools" ? "Playback tools" : mediaPage;
         AppPane.Visibility = mediaPage == "Apps" ? Visibility.Visible : Visibility.Collapsed;
         AppearancePane.Visibility = mediaPage == "Customize" ? Visibility.Visible : Visibility.Collapsed;
@@ -77,20 +81,25 @@ public sealed partial class MainWindow
             var queue = new Button { Content = "Add to queue", IsEnabled = File.Exists(entry.Path) };
             queue.Click += (_, _) => AddToQueue(entry.Path);
             card.Children.Add(queue);
-            grid.Children.Add(card); _ = LoadArtworkAsync(entry, image);
+            grid.Children.Add(card); _ = LoadArtworkAsync(entry, image, artworkCancellation.Token);
         }
         grid.SizeChanged += (_, _) => Arrange(); MediaBody.Children.Add(grid); Arrange();
     }
-    private static async Task LoadArtworkAsync(RecentMedia entry, Image image)
+    private static async Task LoadArtworkAsync(RecentMedia entry, Image image, CancellationToken cancellation)
     {
+        bool acquired = false;
         try
         {
+            await artworkLoads.WaitAsync(cancellation); acquired = true;
             var file = await StorageFile.GetFileFromPathAsync(entry.Path);
+            cancellation.ThrowIfCancellationRequested();
             using var thumbnail = await file.GetThumbnailAsync(entry.Kind == "Music" ? ThumbnailMode.MusicView : ThumbnailMode.VideosView, 256);
-            if (thumbnail is null) return;
-            var bitmap = new BitmapImage(); await bitmap.SetSourceAsync(thumbnail); image.Source = bitmap;
+            if (thumbnail is null || cancellation.IsCancellationRequested) return;
+            var bitmap = new BitmapImage(); await bitmap.SetSourceAsync(thumbnail);
+            if (!cancellation.IsCancellationRequested) image.Source = bitmap;
         }
         catch { /* Missing metadata keeps the honest media-type placeholder. */ }
+        finally { if (acquired) artworkLoads.Release(); }
     }
     private void UpdatePlayerLayout()
     {

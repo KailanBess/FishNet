@@ -59,7 +59,8 @@ public sealed class MediaCatalog
         finally { writes.Release(); }
     }
 
-    public static bool IsAudio(string file) => new[] { ".mp3", ".m4a", ".wav", ".flac", ".wma", ".aac", ".ogg" }.Contains(System.IO.Path.GetExtension(file), StringComparer.OrdinalIgnoreCase);
+    internal static readonly string[] AudioExtensions = [".mp3", ".m4a", ".wav", ".flac", ".wma", ".aac", ".ogg"];
+    public static bool IsAudio(string file) => AudioExtensions.Contains(System.IO.Path.GetExtension(file), StringComparer.OrdinalIgnoreCase);
     private async Task SaveAsync(List<RecentMedia> next)
     {
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);

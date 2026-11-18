@@ -109,10 +109,15 @@ public static class FolderRepair
                 File.Move(item.Temp, item.Target, true); published.Add((item.Target, item.Previous));
             }
         }
-        catch
+        catch (Exception failure)
         {
+            var rollbackFailures = new List<string>();
             foreach (var item in published.AsEnumerable().Reverse())
-                if (item.Previous is null) File.Delete(item.Target); else File.WriteAllBytes(item.Target, item.Previous);
+            {
+                try { if (item.Previous is null) File.Delete(item.Target); else File.WriteAllBytes(item.Target, item.Previous); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { rollbackFailures.Add(Path.GetFileName(item.Target)); }
+            }
+            if (rollbackFailures.Count > 0) throw new IOException("Repair stopped and some records require recovery from the saved repair backup: " + string.Join(", ", rollbackFailures), failure);
             throw;
         }
         finally { foreach (var item in staged) if (File.Exists(item.Temp)) File.Delete(item.Temp); }
