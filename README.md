@@ -48,6 +48,6 @@ dotnet run --project tests/FishNet.MediaTests -c Release
 dotnet run --project tests/FishNet.ConversionTests -c Release
 ```
 
-Release packaging reruns both regression suites and checks the source/tag version. Optional signing uses GitHub secrets `WINDOWS_SIGNING_PFX_BASE64` and `WINDOWS_SIGNING_PASSWORD`, plus variable `WINDOWS_TIMESTAMP_URL` with the provider's HTTPS RFC 3161 endpoint. Credentials are available only to tagged release packaging. Partial configuration, failed trust verification or missing timestamps fail packaging. No signing credentials are committed.
+Release packaging reruns both regression suites and checks the source/tag version. Optional signing uses GitHub secrets `WINDOWS_SIGNING_PFX_BASE64` and `WINDOWS_SIGNING_PASSWORD`, plus variable `WINDOWS_TIMESTAMP_URL` with the provider's HTTPS RFC 3161 endpoint. Credentials are available only to main/tag release packaging. Partial configuration, failed trust verification or missing timestamps fail packaging. No signing credentials are committed.
 
 Tests cover record persistence, corrupt-file preservation, folder boundaries, metadata preservation, duplicate repair targets, interrupted repair rollback, playlists and conversion queue state. Physical audio-output removal, actual codec/playback behavior, screen readers and display scaling remain live Windows acceptance checks. See Microsoft's [MediaPlayer documentation](https://learn.microsoft.com/en-us/windows/apps/develop/media-playback/play-audio-and-video-with-mediaplayer).

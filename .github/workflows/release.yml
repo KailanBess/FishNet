@@ -25,9 +25,9 @@ jobs:
       - name: Publish complete self-contained Windows runtime
         shell: pwsh
         env:
-          WINDOWS_SIGNING_PFX_BASE64: ${{ github.ref_type == 'tag' && secrets.WINDOWS_SIGNING_PFX_BASE64 || '' }}
-          WINDOWS_SIGNING_PASSWORD: ${{ github.ref_type == 'tag' && secrets.WINDOWS_SIGNING_PASSWORD || '' }}
-          WINDOWS_TIMESTAMP_URL: ${{ github.ref_type == 'tag' && vars.WINDOWS_TIMESTAMP_URL || '' }}
+          WINDOWS_SIGNING_PFX_BASE64: ${{ (github.ref_type == 'tag' || github.ref == 'refs/heads/main') && secrets.WINDOWS_SIGNING_PFX_BASE64 || '' }}
+          WINDOWS_SIGNING_PASSWORD: ${{ (github.ref_type == 'tag' || github.ref == 'refs/heads/main') && secrets.WINDOWS_SIGNING_PASSWORD || '' }}
+          WINDOWS_TIMESTAMP_URL: ${{ (github.ref_type == 'tag' || github.ref == 'refs/heads/main') && vars.WINDOWS_TIMESTAMP_URL || '' }}
         run: |
           dotnet run --project tests/FishNet.MediaTests -c Release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -52,7 +52,7 @@ jobs:
             throw
           }
       - name: Publish downloadable app and checksums
-        if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag' || github.ref == 'refs/heads/main'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
