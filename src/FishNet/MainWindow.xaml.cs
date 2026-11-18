@@ -17,6 +17,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "FishNet.ico"));
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1120, 780));
+        AppWindow.Closing += (_, args) => { if (repairPublishing) { args.Cancel = true; ShowError("Wait for the reviewed folder repair to finish before closing FishNet."); } };
         AquariumWorkspace.Mark(this);
         Root.Loaded += InitializeHub;
         PlayerView.SetMediaPlayer(player);
@@ -36,6 +37,12 @@ public sealed partial class MainWindow : Window
             watchTimer.Stop();
             SetSleepTimer(null);
             folderTimer?.Stop();
+            if (audioDevices is not null)
+            {
+                audioDevices.Removed -= AudioDeviceRemoved;
+                if (audioDevices.Status is Windows.Devices.Enumeration.DeviceWatcherStatus.Started or Windows.Devices.Enumeration.DeviceWatcherStatus.EnumerationCompleted)
+                    audioDevices.Stop();
+            }
             SaveWatchPosition();
             cancelConversion = true; conversionCancellation?.Cancel(); podcastCancellation?.Cancel();
             player.MediaOpened -= MediaOpened;
@@ -95,6 +102,7 @@ public sealed partial class MainWindow : Window
         {
             player.Pause();
             playingQueue = false;
+            playbackDiagnostic = $"Windows media error: {args.Error}; HRESULT 0x{args.ExtendedErrorCode?.HResult ?? 0:X8}. Check the file in another Windows player to distinguish a damaged file from an unavailable decoder. FishNet uses Windows codecs; changing a filename extension does not convert the file.";
             ShowError("Playback failed. This file may be damaged or require a codec not installed in Windows. " + args.ErrorMessage);
             PlaybackStatus.Text = "Unable to play this file. Open another file to continue.";
         }

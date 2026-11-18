@@ -3,6 +3,7 @@ var root = Path.Combine(Path.GetTempPath(), "FishNet-media-tests-" + Guid.NewGui
 Directory.CreateDirectory(root);
 try
 {
+    RepairChecks.Run(root);
     var playlists = new Playlists(root); await playlists.LoadAsync();
     var exchangePath = Path.Combine(root, "playlist.m3u8");
     var imported = PlaylistExchange.Read("#EXTM3U\nfirst.mp3\nsub/second.MP3\n", exchangePath);

@@ -35,6 +35,8 @@ public sealed partial class MainWindow
         if (mediaPage == "Home") { AddContinueWatching(); AddFolderControls(); }
         var import = new Button { Content = "Import media folder", IsEnabled = !mediaToolsBusy && mediaCatalog.Warning is null };
         import.Click += async (_, _) => await ImportMediaFolder(); MediaBody.Children.Add(import);
+        var repairFolder = new Button { Content = "Repair moved media folder", IsEnabled = !mediaToolsBusy && mediaCatalog.Warning is null };
+        repairFolder.Click += async (_, _) => await RepairMediaFolder(); MediaBody.Children.Add(repairFolder);
         MediaBody.Children.Add(new TextBlock { Text = mediaPage == "Home" ? "Recent" : mediaPage, FontSize = 25, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
         var entries = mediaCatalog.Items.Where(i => (mediaPage == "Home" || i.Kind == mediaPage) && i.Name.Contains(MediaSearch.Text, StringComparison.OrdinalIgnoreCase)).ToList();
         if (entries.Count == 0)
