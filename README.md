@@ -1,6 +1,6 @@
 # FishNet
 
-FishNet **0.4.0** is a native .NET 8 / WinUI 3 Windows media player, local library and app-link collection in the Aquarium family. This release adds reviewed moved-folder repair, audio-output selection with disconnect fallback, playback diagnostics and a profile lease preventing simultaneous editors.
+FishNet **0.4.1** is a native .NET 10 LTS / WinUI 3 Windows media player, local library and app-link collection in the Aquarium family. This release adds reviewed moved-folder repair, audio-output selection with disconnect fallback, playback diagnostics and a profile lease preventing simultaneous editors.
 
 ## Download
 
@@ -40,7 +40,7 @@ Customize colors, background, border and compact library spacing. Aquarium can o
 
 ## Build and checks
 
-Requires Windows 10 build 19041+ x64 and .NET 8. Use Visual Studio's Developer PowerShell or the repository's Windows build workflow.
+Requires Windows 10 build 19041+ x64 and .NET 10 LTS. Use Visual Studio's Developer PowerShell or the repository's Windows build workflow.
 
 ```powershell
 msbuild src/FishNet/FishNet.csproj /restore /p:Configuration=Release /p:Platform=x64
