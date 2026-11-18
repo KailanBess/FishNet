@@ -14,6 +14,8 @@ public sealed partial class MainWindow
     private async void InitializeHub(object sender, RoutedEventArgs e)
     {
         Root.Loaded -= InitializeHub;
+        await InitializeAudioOutput();
+        if (closed) return;
         appearance.Load(); ApplyAppearance();
         AppearanceBody.Children.Add(appearance.Editor(() => { ApplyAppearance(); RenderLibrary(); RenderMedia(); }, ShowError));
         await library.LoadAsync();

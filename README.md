@@ -1,57 +1,53 @@
 # FishNet
 
-Standalone native C# / .NET 8 / WinUI 3 media player and app-link library in the Aquarium family. Aquatic dark UI with Player, App library, and Customize tabs. There is no built-in browser and no FishNet updater; Aquarium owns update management.
+FishNet **0.4.0** is a native .NET 8 / WinUI 3 Windows media player, local library and app-link collection in the Aquarium family. This release adds reviewed moved-folder repair, audio-output selection with disconnect fallback, playback diagnostics and a profile lease preventing simultaneous editors.
 
 ## Download
 
-The v0.3.1 release workflow publishes `FishNet-windows-x64.zip`, SHA-256 checksums and build metadata after a Windows publish succeeds. Extract the whole unsigned app folder and run FishNet.exe. Native playback/visual acceptance remains a manual check.
+Download `FishNet-windows-x64.zip` from [Releases](../../releases), extract the complete folder and run `FishNet.exe`. Keep all runtime files together. Aquarium can install and update the approved public package. FishNet has no separate updater or built-in browser.
 
-## Build and run
+`BUILD-INFO.json` reports whether the package was publisher-signed. Signing remains unavailable until the maintainer supplies genuine credentials. SHA256SUMS verifies package integrity against release metadata; it is not independent publisher authentication.
 
-Requires Windows 10 build 19041+ x64, .NET 8 SDK, Visual Studio 2022 17.8+ WinUI C# / Windows application development tooling, and Windows SDK 10.0.26100. NuGet access is required. Run these commands from Developer PowerShell for Visual Studio so its MSBuild and Windows packaging tools are available. The root global.json selects .NET 8 even if newer SDKs are installed.
+## Media
+
+- **Home, Music and Videos:** open local files or import folders; browse artwork and search the local catalog. Import supports up to 10,000 records. Supported extensions do not guarantee that Windows can decode a file.
+- **Player:** native playback, seek and volume controls. Continue watching records video positions; Play queue remembers tracks, order and the selected item. Resume playback is explicit.
+- **Playlists:** saved MP3 playlists, ordering, smart rules and M3U exchange.
+- **Playback tools:** SRT/VTT subtitles, playback speed, sleep timer and output selection. Choose Windows default or an available device. The preferred device is remembered; an unavailable or disconnected output falls back to Windows default. Refresh the list after connecting devices.
+- **Diagnostics:** playback failures report the Windows media error and HRESULT, with guidance distinguishing unavailable decoders from damaged files. FishNet does not automatically download codecs or alter system playback settings.
+- **Converter:** compatible Windows audio/video formats, batch queue, cancellation and resumable job records. Available encoders depend on Windows. Completed output is separate from source media.
+- **Tags:** edit MP3 tags and cover art while retaining the original backup.
+- **Podcasts:** explicit user-added HTTPS RSS feeds, downloaded episodes and subscriptions. Service availability remains the provider's responsibility.
+- **Watch media folder:** checks selected folders while FishNet is open and adds new files. Stopping a watch does not remove existing media or files.
+
+## Repair a moved folder
+
+Close playback and wait for imports, conversion and podcast downloads to finish. Choose **Repair moved media folder**, enter the previous absolute folder path and choose its replacement. FishNet previews missing files that exist at the same relative paths in the new folder. Existing files are kept; duplicate destinations require individual review.
+
+After confirmation, the repair updates matching catalog, playlist and queue references, saved video positions and the selected watched-folder root. Files are never moved or renamed. Previous record contents and the reviewed path map are saved under `%LOCALAPPDATA%\FishNet\repair-backups`. Writes are staged together and already published records are rolled back if another destination fails. Keep a separate backup for power-loss recovery; review recovery records before manually replacing any files. Smart playlist folder rules outside the selected root may need their own edit.
+
+Aquarium **Recovery → Encrypted app records** can back up and restore FishNet catalogs, playlists, queue, app links, preferences, podcast subscriptions and video positions. It does not include media files or downloaded podcast audio. Close FishNet before restoring.
+
+## Services and apps
+
+Add an existing desktop executable, a browser executable or an HTTPS website in a named collection. Links open externally; FishNet does not import third-party accounts or streaming libraries, embed apps, install browsers or disable vendor updaters. Browsers cannot be removed while website links reference them. Missing executables are reported. Only add software you intend to run.
+
+Microsoft Store app identities, arbitrary URI schemes, saved command-line flags and automatic app discovery are not supported. Provider links do not grant a license, subscription or DRM access.
+
+## Appearance and storage
+
+Customize colors, background, border and compact library spacing. Aquarium can optionally review and apply a common Ocean/Midnight/Slate and Mint/Blue/Coral palette to closed, initialized profiles. Local records live under `%LOCALAPPDATA%\FishNet`; unreadable files are preserved with affected edits disabled. Profile files are not included in releases. A second FishNet editor cannot open the same profile concurrently; Windows releases its lease after a crash.
+
+## Build and checks
+
+Requires Windows 10 build 19041+ x64 and .NET 8. Use Visual Studio's Developer PowerShell or the repository's Windows build workflow.
 
 ```powershell
-msbuild .\src\FishNet\FishNet.csproj /restore /p:Configuration=Debug /p:Platform=x64
-& .\src\FishNet\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\FishNet.exe
+msbuild src/FishNet/FishNet.csproj /restore /p:Configuration=Release /p:Platform=x64
+dotnet run --project tests/FishNet.MediaTests -c Release
+dotnet run --project tests/FishNet.ConversionTests -c Release
 ```
 
-Or open the csproj in Visual Studio, x64. Publish a self-contained unpackaged folder:
+Release packaging reruns both regression suites and checks the source/tag version. Optional signing uses GitHub secrets `WINDOWS_SIGNING_PFX_BASE64` and `WINDOWS_SIGNING_PASSWORD`, plus variable `WINDOWS_TIMESTAMP_URL` with the provider's HTTPS RFC 3161 endpoint. Credentials are available only to main/tag release packaging. Partial configuration, failed trust verification or missing timestamps fail packaging. No signing credentials are committed.
 
-```powershell
-msbuild .\src\FishNet\FishNet.csproj /restore /t:Publish /p:Configuration=Release /p:Platform=x64 /p:PublishDir=..\..\publish\
-.\publish\FishNet.exe
-```
-
-Keep all published files together. The release ZIP contains the complete publish directory for manual use or Aquarium installation.
-
-## Use
-
-- **Player**: open a local audio/video file. Native controls provide playback, seeking, and volume. Codec support depends on Windows; picker extensions do not guarantee decoding. Playback errors are displayed and media resources are disposed on close.
-- **Link app**: select an existing desktop `.exe`, give it a name, and choose a collection. Open externally starts that executable; FishNet does not embed or modify it.
-- **Add browser**: explicitly select your installed browser `.exe`. There is no bundled browser, WebView, or automatic browser installation.
-- **Add website**: save an HTTPS address and choose one of your added browsers. Open externally passes that address as one argument to the selected browser. No browser command-line customization or arbitrary shell commands are stored.
-- **Collections**: create named collections, filter links, rename or move a link, and remove links without uninstalling the target app. A browser cannot be removed while website links refer to it.
-- **Customize**: persist Mint / Blue / Coral accents, Ocean / Midnight / Slate backgrounds, and compact app-library spacing.
-
-App links are launcher bookmarks, not imported app data, installed packages, synchronized Spotify libraries, or accounts. Microsoft Store app identities, arbitrary URI schemes, command-line flags, automatic app discovery, web content scraping, and persistent media-file indexing are not implemented. A browser link must point to its actual executable, not a shortcut. Missing executables produce an error. Only add software you intend to run.
-
-## Data and architecture
-
-`LinkedLibrary` owns app-link records and collections. `LibraryUi` owns their native controls. `Preferences` owns appearance. `MainWindow` owns local playback and its resource lifecycle. Data is stored under `%LOCALAPPDATA%\FishNet` in `linked-library.json` and `appearance.json`; it is local and never committed to the repository. Atomic temporary-file replacement commits in-memory library state only after successful saves. Unreadable or unsupported files are preserved with edits disabled. One running editor instance is assumed.
-
-Aquarium's release checker is the only Aquarium-family update interface. Publisher signing and native playback/display acceptance remain pending; Aquarium handles approved package installation. FishNet has no automatic self-updater. Linked third-party apps may still have their vendor's own updater; FishNet does not disable it.
-
-References: [Microsoft WinUI media player](https://learn.microsoft.com/windows/apps/design/controls/media-playback).
-
-## Verification
-
-Source project/XAML XML and release scripts were checked. The Windows release workflow must successfully publish the self-contained runtime before public download; inspect its actual result. Playback and visual interaction still require Windows validation.
-
-Smoke checks: play MP3/MP4, pause/seek/volume, cancel file selection, switch/close files, play a damaged file, close during playback. Add an app and browser, create a collection, save an HTTPS website with that browser, restart, filter, edit/move, open externally, and remove. Confirm browser dependency protection and missing-executable errors. Test all customization choices and restart persistence. Back up then corrupt each data file with the app closed; confirm preservation and disabled edits, then restore. Verify no embedded browser or app-specific updater appears.
-
-
-## Media library and tools
-
-Use **Home**, **Music**, and **Videos** to browse local media. Import a folder or open an individual file. Use **Playlists** for saved playback order and M3U exchange, **Converter** for compatible local files, and **Podcasts** for user-added HTTPS RSS feeds. **Services & apps** opens linked services in the user-selected external browser. Output formats and playback codecs depend on Windows capabilities.
-
-**Play queue** remembers its tracks, order, and current item. Resume restarts the saved track. **Watch media folder** checks selected folders while FishNet is open and adds newly found files. Stopping a watch leaves existing media entries and files in place.
+Tests cover record persistence, corrupt-file preservation, folder boundaries, metadata preservation, duplicate repair targets, interrupted repair rollback, playlists and conversion queue state. Physical audio-output removal, actual codec/playback behavior, screen readers and display scaling remain live Windows acceptance checks. See Microsoft's [MediaPlayer documentation](https://learn.microsoft.com/en-us/windows/apps/develop/media-playback/play-audio-and-video-with-mediaplayer).

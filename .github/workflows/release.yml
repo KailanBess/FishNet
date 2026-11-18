@@ -24,7 +24,15 @@ jobs:
         run: git merge-base --is-ancestor HEAD origin/main
       - name: Publish complete self-contained Windows runtime
         shell: pwsh
+        env:
+          WINDOWS_SIGNING_PFX_BASE64: ${{ (github.ref_type == 'tag' || github.ref == 'refs/heads/main') && secrets.WINDOWS_SIGNING_PFX_BASE64 || '' }}
+          WINDOWS_SIGNING_PASSWORD: ${{ (github.ref_type == 'tag' || github.ref == 'refs/heads/main') && secrets.WINDOWS_SIGNING_PASSWORD || '' }}
+          WINDOWS_TIMESTAMP_URL: ${{ (github.ref_type == 'tag' || github.ref == 'refs/heads/main') && vars.WINDOWS_TIMESTAMP_URL || '' }}
         run: |
+          dotnet run --project tests/FishNet.MediaTests -c Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/FishNet.ConversionTests -c Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           try {
             msbuild src/FishNet/FishNet.csproj /restore /t:Publish /p:Configuration=Release /p:Platform=x64 /p:PublishDir="$PWD/artifacts/FishNet/" 2>&1 | Tee-Object artifacts/build.log
@@ -49,10 +57,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $notes = 'Complete unsigned FishNet Windows x64 app. Extract the entire ZIP into a new folder and run FishNet.exe. Keep its self-contained runtime files together. Media codecs depend on Windows; native playback and physical display acceptance remain manual checks. User profiles are not included. Verify SHA256SUMS.txt. Aquarium handles app installation and updates.'
+          $signed = [bool](Get-Content artifacts/release/BUILD-INFO.json -Raw | ConvertFrom-Json).signed
+          $status = if ($signed) { 'Publisher-signed and timestamp verified.' } else { 'Unsigned development release; publisher signing is not configured.' }
+          $notes = "Complete FishNet Windows x64 app. $status Adds reviewed moved-folder repair, audio-output selection with disconnect fallback, playback diagnostics and protection against simultaneous profile editors. Extract the entire ZIP into a new folder and run FishNet.exe. Keep its self-contained runtime files together. Media codecs depend on Windows; physical audio/video acceptance remains a manual check. User profiles are not included. Verify SHA256SUMS.txt. Aquarium handles app installation and updates."
           $notes | Set-Content artifacts/notes.txt -Encoding utf8
           $tag = 'v' + (Get-Content artifacts/release/BUILD-INFO.json -Raw | ConvertFrom-Json).version
-          if ($env:GITHUB_REF_TYPE -eq 'branch' -and $tag -ne 'v0.3.8') { return }
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) { return }
           gh release create $tag ./artifacts/release/FishNet-windows-x64.zip ./artifacts/release/SHA256SUMS.txt ./artifacts/release/BUILD-INFO.json --target $env:GITHUB_SHA --draft --title "FishNet $tag" --notes-file artifacts/notes.txt

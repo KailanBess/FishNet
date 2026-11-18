@@ -15,8 +15,9 @@ public sealed class MediaCatalog
         try
         {
             if (!File.Exists(path)) return;
+            if (new FileInfo(path).Length > 32 * 1024 * 1024) throw new InvalidDataException("The media library exceeds its record size limit.");
             Items = JsonSerializer.Deserialize<List<RecentMedia>>(await File.ReadAllTextAsync(path)) ?? throw new InvalidDataException("Invalid media library.");
-            if (Items.Any(i => i is null || string.IsNullOrWhiteSpace(i.Path) || string.IsNullOrWhiteSpace(i.Name))) throw new InvalidDataException("Invalid media library entry.");
+            if (Items.Count > 10000 || Items.Any(i => i is null || string.IsNullOrWhiteSpace(i.Path) || !Path.IsPathFullyQualified(i.Path) || string.IsNullOrWhiteSpace(i.Name) || i.Kind is not ("Music" or "Videos"))) throw new InvalidDataException("Invalid media library entry.");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidDataException)
         { Items = []; Warning = "The media library could not be read and was preserved. " + ex.Message; }
@@ -58,7 +59,8 @@ public sealed class MediaCatalog
         finally { writes.Release(); }
     }
 
-    public static bool IsAudio(string file) => new[] { ".mp3", ".m4a", ".wav", ".flac", ".wma", ".aac", ".ogg" }.Contains(System.IO.Path.GetExtension(file), StringComparer.OrdinalIgnoreCase);
+    internal static readonly string[] AudioExtensions = [".mp3", ".m4a", ".wav", ".flac", ".wma", ".aac", ".ogg"];
+    public static bool IsAudio(string file) => AudioExtensions.Contains(System.IO.Path.GetExtension(file), StringComparer.OrdinalIgnoreCase);
     private async Task SaveAsync(List<RecentMedia> next)
     {
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);

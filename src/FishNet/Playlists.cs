@@ -47,8 +47,9 @@ public sealed class Playlists
         try
         {
             if (!File.Exists(path)) return;
+            if (new FileInfo(path).Length > 32 * 1024 * 1024) throw new InvalidDataException("The playlist file is too large.");
             var loaded = JsonSerializer.Deserialize<List<Playlist>>(await File.ReadAllTextAsync(path)) ?? throw new InvalidDataException("Empty playlist file.");
-            if (loaded.Any(p => !Valid(p)) || loaded.Select(p => p.Id).Distinct().Count() != loaded.Count) throw new InvalidDataException("Invalid playlist data.");
+            if (loaded.Count > 200 || loaded.Any(p => !Valid(p)) || loaded.Sum(p => (long)p.Tracks.Count) > 100000 || loaded.Select(p => p.Id).Distinct().Count() != loaded.Count) throw new InvalidDataException("Invalid playlist data.");
             Items = loaded;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidDataException or ArgumentException)
@@ -57,13 +58,13 @@ public sealed class Playlists
     public async Task SaveAsync(List<Playlist> next)
     {
         if (Warning is not null) throw new InvalidOperationException(Warning);
-        if (next.Any(p => !Valid(p))) throw new InvalidDataException("Playlists require a name, local MP3 paths or a valid smart rule.");
+        if (next.Count > 200 || next.Any(p => !Valid(p)) || next.Sum(p => (long)p.Tracks.Count) > 100000 || next.Select(p => p.Id).Distinct().Count() != next.Count) throw new InvalidDataException("Playlists require unique IDs, a name, local MP3 paths or a valid smart rule. Limits: 200 lists, 10,000 tracks per list and 100,000 total tracks.");
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         await File.WriteAllTextAsync(path + ".tmp", JsonSerializer.Serialize(next, new JsonSerializerOptions { WriteIndented = true }));
         File.Move(path + ".tmp", path, true); Items = next;
     }
     private static bool Valid(Playlist? playlist) =>
-        playlist is not null && !string.IsNullOrWhiteSpace(playlist.Id) && !string.IsNullOrWhiteSpace(playlist.Name) &&
+        playlist is not null && !string.IsNullOrWhiteSpace(playlist.Id) && !string.IsNullOrWhiteSpace(playlist.Name) && playlist.Tracks?.Count <= 10000 &&
         playlist.Tracks is not null && (playlist.Rule is not null
             ? playlist.Tracks.Count == 0 && playlist.Rule.Valid
             : playlist.Tracks.All(track => Path.IsPathFullyQualified(track) && Path.GetExtension(track).Equals(".mp3", StringComparison.OrdinalIgnoreCase)));

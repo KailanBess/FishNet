@@ -63,6 +63,7 @@ public sealed partial class MainWindow
     private void RenderPlaybackTools()
     {
         MediaBody.Children.Clear();
+        AddAudioOutputControls();
         var subtitles = new Button { Content = "Add subtitle file (SRT / VTT)" }; subtitles.Click += async (_, _) => await AddSubtitles(); MediaBody.Children.Add(subtitles);
         var off = new Button { Content = "Disable subtitles" }; off.Click += (_, _) => { if (playbackItem is not null) for (uint i = 0; i < playbackItem.TimedMetadataTracks.Count; i++) playbackItem.TimedMetadataTracks.SetPresentationMode(i, TimedMetadataTrackPresentationMode.Disabled); }; MediaBody.Children.Add(off);
         var speed = new ComboBox { Header = "Playback speed", ItemsSource = new[] { .5, .75, 1, 1.25, 1.5, 2 }, SelectedItem = player.PlaybackSession.PlaybackRate };
