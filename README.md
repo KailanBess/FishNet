@@ -1,6 +1,8 @@
 # FishNet
 
-FishNet **0.4.1** is a native .NET 10 LTS / WinUI 3 Windows media player, local library and app-link collection in the Aquarium family. This release adds reviewed moved-folder repair, audio-output selection with disconnect fallback, playback diagnostics and a profile lease preventing simultaneous editors.
+FishNet **0.5.0** is a native .NET 10 LTS / WinUI 3 Windows media player, local library and app-link collection in the Aquarium family. This release adds saved HTTPS internet radio stations and explicit stream playback, retaining moved-folder repair, audio-output selection, playback diagnostics and protection against simultaneous profile editors.
+
+The broader development scope comes from the [shared ecosystem specification](https://chatgpt.com/share/6b08a8dd-e4a8-83e9-ab79-0f2360b34a3e), whose full text is tracked in Aquarium. This release implements one part of that roadmap; Tailscale and private networking remain excluded.
 
 ## Download
 
