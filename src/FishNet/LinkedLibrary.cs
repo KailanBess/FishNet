@@ -13,7 +13,7 @@ public sealed class LinkedLibraryState
 
 public sealed class LinkedLibrary
 {
-    public string PathOnDisk { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet", "linked-library.json");
+    public string PathOnDisk { get; } = Path.Combine(ProfilePaths.DataDirectory, "linked-library.json");
     public LinkedLibraryState State { get; private set; } = new();
     public bool Writable { get; private set; } = true;
     public string? Warning { get; private set; }

@@ -7,7 +7,7 @@ internal sealed record ConversionJob(string Input, string? Output = null, string
 internal sealed record ConversionQueue(string Destination, string Format, uint Mp3Bitrate, bool ToPlaylist, List<ConversionJob> Jobs)
 {
     private static readonly string QueuePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet", "conversion-queue.json");
+        ProfilePaths.DataDirectory, "conversion-queue.json");
 
     internal static FileStream AcquireWriter()
     {

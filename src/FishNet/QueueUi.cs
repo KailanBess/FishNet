@@ -7,7 +7,7 @@ namespace FishNet;
 public sealed partial class MainWindow
 {
     private sealed record SavedQueue(List<string> Tracks, int Index, bool Repeat);
-    private readonly string queueFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet", "play-queue.json");
+    private readonly string queueFile = Path.Combine(ProfilePaths.DataDirectory, "play-queue.json");
     private string? queueWarning;
 
     private void LoadQueue()

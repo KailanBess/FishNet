@@ -60,7 +60,7 @@ public static class FolderRepair
 
     public static string PositionFile(string path) => "watch-positions/" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(path.ToUpperInvariant()))) + ".json";
 
-    private static bool Allowed(string file) => file is "media-library.json" or "playlists.json" or "play-queue.json" or "watched-folders.json" ||
+    private static bool Allowed(string file) => file is "media-library.json" or "visual-library.json" or "playlists.json" or "play-queue.json" or "watched-folders.json" ||
         file.StartsWith("watch-positions/", StringComparison.Ordinal) && file.EndsWith(".json", StringComparison.Ordinal) &&
         file.Length == 85 && file[16..^5].All(Uri.IsHexDigit);
 

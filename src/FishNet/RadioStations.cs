@@ -12,7 +12,7 @@ public sealed class RadioStations
     public IReadOnlyList<RadioStation> Items { get; private set; } = [];
     public string? Warning { get; private set; }
     public RadioStations(string? directory = null) => path = Path.Combine(directory ??
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet"), "radio-stations.json");
+        ProfilePaths.DataDirectory, "radio-stations.json");
 
     public async Task LoadAsync()
     {

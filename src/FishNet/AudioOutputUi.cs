@@ -11,7 +11,7 @@ public sealed partial class MainWindow
     private DeviceWatcher? audioDevices;
     private string? selectedAudioId;
     private string playbackDiagnostic = "No playback failure reported in this session.";
-    private readonly string audioSettings = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet", "audio-output.json");
+    private readonly string audioSettings = Path.Combine(ProfilePaths.DataDirectory, "audio-output.json");
 
     private void AddAudioOutputControls()
     {

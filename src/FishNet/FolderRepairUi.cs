@@ -9,9 +9,9 @@ public sealed partial class MainWindow
     private bool repairPublishing;
     private async Task RepairMediaFolder()
     {
-        if (mediaToolsBusy || scanningFolders || source is not null || podcastBusy || converting || playlistBusy)
+        if (mediaToolsBusy || scanningFolders || source is not null || podcastBusy || converting || playlistBusy || visualBusy || visualCurrent is not null)
         { ShowError("Close playback and let current imports, podcast downloads or conversions finish before repairing folders."); return; }
-        if (mediaCatalog.Warning is not null || playlists.Warning is not null || queueWarning is not null || folderWarning is not null)
+        if (mediaCatalog.Warning is not null || visualLibrary.Warning is not null || playlists.Warning is not null || queueWarning is not null || folderWarning is not null)
         { ShowError("Resolve the unreadable media records before repairing folders."); return; }
         mediaToolsBusy = true; folderTimer?.Stop(); OpenButton.IsEnabled = false;
         try
@@ -34,7 +34,7 @@ public sealed partial class MainWindow
             var body = new StackPanel { Spacing = 10, Children = { oldRoot, browse, location, new TextBlock
                 { Text = "Matches missing files by their relative folder paths. Files are never moved or renamed. A backup of the records is kept before applying.", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap } } };
             if (await Dialog("Repair a moved media folder", body).ShowAsync() != ContentDialogResult.Primary || replacementRoot is null || closed) return;
-            var allPaths = mediaCatalog.Items.Select(i => i.Path).Concat(playlists.Items.SelectMany(p => p.Tracks)).Concat(playbackQueue);
+            var allPaths = mediaCatalog.Items.Select(i => i.Path).Concat(visualLibrary.State.Items.Select(i => i.Path)).Concat(playlists.Items.SelectMany(p => p.Tracks)).Concat(playbackQueue);
             var changes = FolderRepair.Preview(allPaths, oldRoot.Text, replacementRoot);
             var folderChanges = FolderRepair.FolderReferences(watchedFolders.Concat(playlists.Items.Where(p => p.Rule is not null).Select(p => p.Rule!.Folder)), oldRoot.Text, replacementRoot);
             if (changes.Count == 0) { ShowError("No missing files matched the same relative paths in that folder."); return; }
@@ -44,7 +44,7 @@ public sealed partial class MainWindow
             if (await review.ShowAsync() != ContentDialogResult.Primary || closed) return;
             MediaNavigation.IsEnabled = false;
             repairPublishing = true;
-            var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet");
+            var root = ProfilePaths.DataDirectory;
             var writes = new List<RepairWrite>();
             var before = new Dictionary<string, byte[]>();
             void Add(string file, IReadOnlyList<MediaPathChange> replacements)
@@ -55,7 +55,7 @@ public sealed partial class MainWindow
                 var data = File.ReadAllBytes(path); before[file] = data;
                 writes.Add(new(file, FolderRepair.Rewrite(data, replacements)));
             }
-            foreach (var file in new[] { "media-library.json", "play-queue.json" }) Add(file, changes);
+            foreach (var file in new[] { "media-library.json", "visual-library.json", "play-queue.json" }) Add(file, changes);
             Add("playlists.json", changes.Concat(folderChanges).DistinctBy(c => c.Previous, StringComparer.OrdinalIgnoreCase).ToArray());
             Add("watched-folders.json", folderChanges);
             int skippedPositions = 0;
@@ -75,7 +75,7 @@ public sealed partial class MainWindow
             Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
             File.WriteAllText(backup, JsonSerializer.Serialize(new { Records = before, Changes = changes }));
             await Task.Run(() => FolderRepair.Apply(root, writes));
-            await mediaCatalog.LoadAsync(); await playlists.LoadAsync(); LoadQueue();
+            await mediaCatalog.LoadAsync(); await visualLibrary.LoadAsync(); await playlists.LoadAsync(); LoadQueue();
             watchedFolders = watchedFolders.Select(p => folderChanges.FirstOrDefault(c => c.Previous.Equals(p, StringComparison.OrdinalIgnoreCase))?.Replacement ?? p).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
             Notice.Severity = InfoBarSeverity.Success; Notice.Message = $"Repaired {changes.Count} paths in the library, playlists, queue and readable playback positions. Skipped unreadable/oversized position records: {skippedPositions}; their originals were kept. Previous records: {backup}"; Notice.IsOpen = true;
         }

@@ -5,6 +5,13 @@ var root = Path.Combine(Path.GetTempPath(), "FishNet-conversion-tests-" + Guid.N
 Directory.CreateDirectory(root);
 try
 {
+    await VisualNativeChecks.Run(root);
+    if (args.Length == 2 && args[0] == "--export-visual-fixtures")
+    {
+        if (!Path.IsPathFullyQualified(args[1])) throw new ArgumentException("Choose an absolute fixture output directory.");
+        Directory.CreateDirectory(args[1]);
+        foreach (var name in new[] { "generated-photo.png", "generated-document.pdf" }) File.Copy(Path.Combine(root, name), Path.Combine(args[1], name), overwrite: true);
+    }
     var inputPath = Path.Combine(root, "tone.wav");
     // Generated one-second PCM tone; no user media is read.
     using (var writer = new BinaryWriter(File.Create(inputPath)))

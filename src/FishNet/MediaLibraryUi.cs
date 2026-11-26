@@ -16,7 +16,9 @@ public sealed partial class MainWindow
     private static readonly SemaphoreSlim artworkLoads = new(4, 4);
     private void NavigateMedia(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        mediaPage = args.IsSettingsSelected ? "Customize" : (args.SelectedItem as NavigationViewItem)?.Tag?.ToString() ?? "Home";
+        var nextPage = args.IsSettingsSelected ? "Customize" : (args.SelectedItem as NavigationViewItem)?.Tag?.ToString() ?? "Home";
+        if (nextPage != mediaPage) { StopVisualWork(); visualCurrent = null; visualPdf = null; }
+        mediaPage = nextPage;
         if (mediaReady) RenderMedia();
     }
     private void SearchMedia(object sender, TextChangedEventArgs args) { if (mediaReady) RenderMedia(); }
@@ -30,6 +32,7 @@ public sealed partial class MainWindow
         MediaPane.Visibility = mediaPage is "Home" or "Music" or "Videos" or "Playlists" or "Converter" or "PlaybackTools" or "Podcasts" or "Queue" ? Visibility.Visible : Visibility.Collapsed;
         PageHost.Visibility = mediaPage == "Player" ? Visibility.Collapsed : Visibility.Visible;
         UpdatePlayerLayout();
+        if (mediaPage is "Photos" or "Documents") { RenderVisualLibrary(); return; }
         if (mediaPage == "Radio") { MediaPageTitle.Text = "Internet radio"; MediaPane.Visibility = Visibility.Visible; RenderRadio(); return; }
         if (mediaPage == "Queue") { RenderQueue(); return; }
         if (mediaPage == "Podcasts") { RenderPodcasts(); return; }

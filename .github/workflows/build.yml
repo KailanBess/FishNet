@@ -14,6 +14,8 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - uses: microsoft/setup-msbuild@v2
+      - name: Restore pinned shared Core package
+        run: ./scripts/Restore-Core.ps1
       - name: Test media and conversion logic
         run: |
           dotnet run --project tests/FishNet.MediaTests -c Release

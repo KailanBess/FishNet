@@ -1,6 +1,6 @@
 # FishNet
 
-FishNet **0.5.0** is a native .NET 10 LTS / WinUI 3 Windows media player, local library and app-link collection in the Aquarium family. This release adds saved HTTPS internet radio stations and explicit stream playback, retaining moved-folder repair, audio-output selection, playback diagnostics and protection against simultaneous profile editors.
+FishNet **0.6.0** is a native .NET 10 LTS / WinUI 3 Windows media player, local library and app-link collection in the Aquarium family. This release adds a local photo and PDF library, photo editing to a separate copy, and the portable Aquarium.Core settings dependency. Audio/video playback, internet radio and existing records remain available.
 
 The broader development scope comes from the [shared ecosystem specification](https://chatgpt.com/share/6b08a8dd-e4a8-83e9-ab79-0f2360b34a3e), whose full text is tracked in Aquarium. This release implements one part of that roadmap; Tailscale and private networking remain excluded.
 
@@ -13,6 +13,7 @@ Download `FishNet-windows-x64.zip` from [Releases](../../releases), extract the 
 ## Media
 
 - **Home, Music and Videos:** open local files or import folders; browse artwork and search the local catalog. Import supports up to 10,000 records. Supported extensions do not guarantee that Windows can decode a file.
+- **Photos and PDF documents:** import folders, browse photos, create albums, filter imported screenshots, relink missing files and read PDFs with page navigation and zoom. Photo information reports decoded dimensions and available recorded metadata; missing metadata stays unknown. A five-second slideshow advances photos only while that view is open. Crop, rotate and brightness export a new PNG/JPEG with source metadata omitted; the source remains unchanged. Native Windows decoders determine format support. Limits: 10,000 records, 200 albums, 64 MB per photo, 100 megapixels for viewing, 16 megapixels for editing, 512 MB and 10,000 pages per PDF. Protected PDF passwords are used for that open operation and are never saved. PDF annotations, text search/OCR, Office documents and RAW development are future work.
 - **Player:** native playback, seek and volume controls. Continue watching records video positions; Play queue remembers tracks, order and the selected item. Resume playback is explicit.
 - **Playlists:** saved MP3 playlists, ordering, smart rules and M3U exchange.
 - **Playback tools:** SRT/VTT subtitles, playback speed, sleep timer and output selection. Choose Windows default or an available device. The preferred device is remembered; an unavailable or disconnected output falls back to Windows default. Refresh the list after connecting devices.
@@ -27,9 +28,9 @@ Download `FishNet-windows-x64.zip` from [Releases](../../releases), extract the 
 
 Close playback and wait for imports, conversion and podcast downloads to finish. Choose **Repair moved media folder**, enter the previous absolute folder path and choose its replacement. FishNet previews missing files that exist at the same relative paths in the new folder. Existing files are kept; duplicate destinations require individual review.
 
-After confirmation, the repair updates matching catalog, playlist and queue references, saved video positions and the selected watched-folder root. Files are never moved or renamed. Previous record contents and the reviewed path map are saved under `%LOCALAPPDATA%\FishNet\repair-backups`. Writes are staged together and already published records are rolled back if another destination fails. Keep a separate backup for power-loss recovery; review recovery records before manually replacing any files. Smart playlist folder rules outside the selected root may need their own edit.
+After confirmation, the repair updates matching photo/PDF catalog, audio/video catalog, playlist and queue references, saved video positions and the selected watched-folder root. Files are never moved or renamed. Previous record contents and the reviewed path map are saved under `%LOCALAPPDATA%\FishNet\repair-backups`. Writes are staged together and already published records are rolled back if another destination fails. Keep a separate backup for power-loss recovery; review recovery records before manually replacing any files. Smart playlist folder rules outside the selected root may need their own edit.
 
-Aquarium **Recovery → Encrypted app records** can back up and restore FishNet catalogs, playlists, queue, app links, preferences, podcast subscriptions and video positions. It does not include media files or downloaded podcast audio. Close FishNet before restoring.
+Aquarium **Recovery → Encrypted app records** can back up and restore FishNet catalogs, playlists, queue, app links, preferences, podcast subscriptions and video positions. It does not include media files or downloaded podcast audio. Close FishNet before restoring. Photo/PDF records require Aquarium 0.7.0 or later; earlier backups omit them.
 
 ## Services and apps
 
@@ -41,15 +42,22 @@ Microsoft Store app identities, arbitrary URI schemes, saved command-line flags 
 
 Customize colors, background, border and compact library spacing. Aquarium can optionally review and apply a common Ocean/Midnight/Slate and Mint/Blue/Coral palette to closed, initialized profiles. Local records live under `%LOCALAPPDATA%\FishNet`; unreadable files are preserved with affected edits disabled. Profile files are not included in releases. A second FishNet editor cannot open the same profile concurrently; Windows releases its lease after a crash.
 
+### Separate profiles
+
+The default remains %LOCALAPPDATA%\FishNet. For an isolated profile, set FISHNET_DATA_ROOT to an absolute directory on a local drive, or place FishNet.profile.json beside the executable containing {"DataDirectory":"C:\\Profiles\\FishNet"}. The environment variable takes precedence. Invalid or linked paths stop startup. Close all instances before changing a selector; this chooses a different profile and does not move or merge records. Back up that directory separately: Aquarium's appearance and encrypted-record tools target the default profile. Managed installation removal refuses a custom profile selector so records stored in an installation cannot be silently discarded. Release archives never include a profile selector.
+
 ## Build and checks
 
 Requires Windows 10 build 19041+ x64 and .NET 10 LTS. Use Visual Studio's Developer PowerShell or the repository's Windows build workflow.
 
 ```powershell
+./scripts/Restore-Core.ps1
 msbuild src/FishNet/FishNet.csproj /restore /p:Configuration=Release /p:Platform=x64
 dotnet run --project tests/FishNet.MediaTests -c Release
 dotnet run --project tests/FishNet.ConversionTests -c Release
 ```
+
+The restore script obtains the published Aquarium.Core 0.2.0 package and verifies its pinned SHA-256 before NuGet uses the local `.core-feed`; no credentials or binary dependencies are committed.
 
 Release packaging reruns both regression suites and checks the source/tag version. Optional signing uses GitHub secrets `WINDOWS_SIGNING_PFX_BASE64` and `WINDOWS_SIGNING_PASSWORD`, plus variable `WINDOWS_TIMESTAMP_URL` with the provider's HTTPS RFC 3161 endpoint. Credentials are available only to main/tag release packaging. Partial configuration, failed trust verification or missing timestamps fail packaging. No signing credentials are committed.
 

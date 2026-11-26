@@ -1,5 +1,7 @@
 **/bin/
 **/obj/
+.core-feed/
+FishNet.profile.json
 .vs/
 publish/
 *.user

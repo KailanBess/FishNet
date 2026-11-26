@@ -8,7 +8,7 @@ namespace FishNet;
 
 public sealed partial class MainWindow
 {
-    private readonly string foldersFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet", "watched-folders.json");
+    private readonly string foldersFile = Path.Combine(ProfilePaths.DataDirectory, "watched-folders.json");
     private List<string> watchedFolders = [];
     private DispatcherQueueTimer? folderTimer;
     private bool scanningFolders;

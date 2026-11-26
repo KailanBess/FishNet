@@ -39,7 +39,7 @@ public static class PlaylistQueue
 public sealed class Playlists
 {
     private readonly string path;
-    public Playlists(string? directory = null) => path = Path.Combine(directory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet"), "playlists.json");
+    public Playlists(string? directory = null) => path = Path.Combine(directory ?? ProfilePaths.DataDirectory, "playlists.json");
     public List<Playlist> Items { get; private set; } = [];
     public string? Warning { get; private set; }
     public async Task LoadAsync()
