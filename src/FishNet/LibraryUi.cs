@@ -21,6 +21,7 @@ public sealed partial class MainWindow
         await library.LoadAsync();
         LoadQueue();
         await mediaCatalog.LoadAsync(); await playlists.LoadAsync(); mediaReady = true;
+        await radioStations.LoadAsync();
         StartFolderWatch();
         MediaNavigation.SelectedItem = MediaNavigation.MenuItems[0]; RenderMedia();
         if (mediaCatalog.Warning is not null) ShowError(mediaCatalog.Warning);
