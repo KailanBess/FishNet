@@ -18,6 +18,7 @@ Download `FishNet-windows-x64.zip` from [Releases](../../releases), extract the 
 - **Converter:** compatible Windows audio/video formats, batch queue, cancellation and resumable job records. Available encoders depend on Windows. Completed output is separate from source media.
 - **Tags:** edit MP3 tags and cover art while retaining the original backup.
 - **Podcasts:** explicit user-added HTTPS RSS feeds, downloaded episodes and subscriptions. Service availability remains the provider's responsibility.
+- **Internet radio:** save up to 200 named direct HTTPS audio streams, search stations, play and remove saved entries. Adding a station never connects; Play explicitly uses the Windows media engine. Pause/volume and Close media retain their normal behavior. Station lists load without network access and damaged records are preserved with edits disabled. Codecs, connectivity and regional access depend on Windows and the provider. Radio streams remain separate from local media, queues and video resume records. Public stream addresses are saved in `radio-stations.json`; do not put private tokens in them. No station directory, subscription access, recording or automatic reconnection is provided.
 - **Watch media folder:** checks selected folders while FishNet is open and adds new files. Stopping a watch does not remove existing media or files.
 
 ## Repair a moved folder

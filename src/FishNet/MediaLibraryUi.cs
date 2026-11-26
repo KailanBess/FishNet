@@ -30,6 +30,7 @@ public sealed partial class MainWindow
         MediaPane.Visibility = mediaPage is "Home" or "Music" or "Videos" or "Playlists" or "Converter" or "PlaybackTools" or "Podcasts" or "Queue" ? Visibility.Visible : Visibility.Collapsed;
         PageHost.Visibility = mediaPage == "Player" ? Visibility.Collapsed : Visibility.Visible;
         UpdatePlayerLayout();
+        if (mediaPage == "Radio") { MediaPageTitle.Text = "Internet radio"; MediaPane.Visibility = Visibility.Visible; RenderRadio(); return; }
         if (mediaPage == "Queue") { RenderQueue(); return; }
         if (mediaPage == "Podcasts") { RenderPodcasts(); return; }
         if (mediaPage == "Playlists") { RenderPlaylists(); return; }
