@@ -123,7 +123,7 @@ public sealed partial class MainWindow
         try
         {
             var extension = "." + selected.ToLowerInvariant();
-            var picker = new Microsoft.Windows.Storage.Pickers.FileSavePicker(AppWindow.Id) { SuggestedFileName = Path.GetFileNameWithoutExtension(input.Name) + "-converted" };
+            var picker = new Microsoft.Windows.Storage.Pickers.FileSavePicker(AppWindow.Id) { SuggestedFileName = Path.GetFileNameWithoutExtension(input.Name) + "-converted", DefaultFileExtension = extension };
             picker.FileTypeChoices.Add(selected, new List<string> { extension });
             var output = await picker.PickSaveFileAsync();
             if (output is null || closed || cancelConversion) { conversionStatus = "Conversion cancelled."; return; }
