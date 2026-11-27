@@ -23,6 +23,57 @@ try
         for (var i = 0; i < samples; i++) writer.Write((short)(Math.Sin(i * 2 * Math.PI * 440 / samples) * 4000));
     }
     var input = await StorageFile.GetFileFromPathAsync(inputPath);
+    var preservedSource = File.ReadAllBytes(inputPath);
+    foreach (var format in new[] { "MP3", "M4A", "WAV", "FLAC" })
+    {
+        var copyPath = Path.Combine(root, "stream-copy." + format.ToLowerInvariant());
+        await MediaConverter.ConvertCopyAsync(inputPath, copyPath, format);
+        var decodedCopy = Path.Combine(root, "stream-decoded-" + format + ".wav"); File.WriteAllBytes(decodedCopy, []);
+        var decodedFile = await StorageFile.GetFileFromPathAsync(decodedCopy);
+        await MediaConverter.TranscodeAsync(await StorageFile.GetFileFromPathAsync(copyPath), decodedFile, "WAV");
+        var properties = await decodedFile.Properties.GetMusicPropertiesAsync();
+        if (new FileInfo(copyPath).Length < 100 || properties.Duration.TotalSeconds < .8) throw new Exception("Stream export did not decode real " + format);
+    }
+    var retainedDestination = Path.Combine(root, "keep-destination.mp3");
+    var retainedBytes = "generated prior output"u8.ToArray(); File.WriteAllBytes(retainedDestination, retainedBytes);
+    using (var stopped = new CancellationTokenSource())
+    {
+        stopped.Cancel();
+        try { await MediaConverter.ConvertCopyAsync(inputPath, retainedDestination, "MP3", stopped.Token); throw new Exception("Canceled stream export accepted"); }
+        catch (OperationCanceledException) { }
+    }
+    using (var interrupted = new CancellationTokenSource())
+    {
+        var longSource = Path.Combine(root, "long-cancellation-fixture.wav");
+        var wave = File.ReadAllBytes(inputPath);
+        using (var output = new BinaryWriter(File.Create(longSource)))
+        {
+            output.Write(wave.AsSpan(0, 44));
+            for (int i = 0; i < 60; i++) output.Write(wave.AsSpan(44));
+            output.BaseStream.Position = 4; output.Write(36 + (wave.Length - 44) * 60);
+            output.BaseStream.Position = 40; output.Write((wave.Length - 44) * 60);
+        }
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var conversion = MediaConverter.ConvertCopyAsync(longSource, retainedDestination, "MP3", interrupted.Token, _ => started.TrySetResult());
+        if (await Task.WhenAny(started.Task, conversion).WaitAsync(TimeSpan.FromSeconds(30)) != started.Task)
+            throw new Exception("Cancellation fixture did not observe an active encode");
+        // Model a separate UI request, without canceling reentrantly inside the native progress callback.
+        interrupted.Cancel();
+        try
+        {
+            await conversion.WaitAsync(TimeSpan.FromSeconds(30));
+            throw new Exception("In-progress stream export cancellation was ignored");
+        }
+        catch (OperationCanceledException) { }
+    }
+    var damagedInput = Path.Combine(root, "damaged-source.wav"); File.WriteAllText(damagedInput, "generated invalid media");
+    try { await MediaConverter.ConvertCopyAsync(damagedInput, retainedDestination, "MP3"); throw new Exception("Invalid stream export accepted"); }
+    catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException) { }
+    try { await MediaConverter.ConvertCopyAsync(inputPath, inputPath, "WAV"); throw new Exception("Stream export source overwrite accepted"); }
+    catch (InvalidOperationException) { }
+    if (!File.ReadAllBytes(retainedDestination).SequenceEqual(retainedBytes) || !File.ReadAllBytes(inputPath).SequenceEqual(preservedSource) || Directory.GetFiles(root, "*.tmp").Length > 0)
+        throw new Exception("Canceled/failed stream export damaged files or retained temporary data");
+    Console.WriteLine("PASS: path-only export pipeline, four real stream encoders, source/prior-destination preservation and temporary cleanup");
     foreach (var format in new[] { "MP3", "M4A", "WAV", "FLAC" })
     {
         var path = Path.Combine(root, "converted." + format.ToLowerInvariant()); File.WriteAllBytes(path, []);
@@ -85,6 +136,11 @@ try
     }
     foreach (var format in new[] { "MP4", "WMV", "MP3" })
     {
+        var copyPath = Path.Combine(root, "stream-video." + format.ToLowerInvariant());
+        await MediaConverter.ConvertCopyAsync(video.Path, copyPath, format);
+        var copyFile = await StorageFile.GetFileFromPathAsync(copyPath);
+        var duration = format == "MP3" ? (await copyFile.Properties.GetMusicPropertiesAsync()).Duration : (await copyFile.Properties.GetVideoPropertiesAsync()).Duration;
+        if (new FileInfo(copyPath).Length < 100 || duration.TotalSeconds < .8) throw new Exception("Stream video output invalid: " + format);
         var path = Path.Combine(root, "video-output." + format.ToLowerInvariant()); File.WriteAllBytes(path, []);
         var output = await StorageFile.GetFileFromPathAsync(path);
         await MediaConverter.TranscodeAsync(video, output, format);
