@@ -34,7 +34,7 @@ public sealed partial class MainWindow : Window
         slideshow.Tick += async (_, _) => await AdvanceVisual(1);
         Closed += (_, _) =>
         {
-            closed = true;
+            closed = true; activityCancellation.Cancel();
             StopVisualWork(); visualPdf = null;
             watchTimer.Stop();
             SetSleepTimer(null);
@@ -138,5 +138,6 @@ public sealed partial class MainWindow : Window
         Notice.Severity = InfoBarSeverity.Error;
         Notice.Message = message;
         Notice.IsOpen = true;
+        _ = localActivity.RecordAsync(LocalActivityKind.ErrorNotice, activityCancellation.Token);
     }
 }

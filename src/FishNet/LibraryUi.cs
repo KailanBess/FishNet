@@ -14,6 +14,8 @@ public sealed partial class MainWindow
     private async void InitializeHub(object sender, RoutedEventArgs e)
     {
         Root.Loaded -= InitializeHub;
+        _ = localActivity.RecordAsync(LocalActivityKind.ApplicationStarted, activityCancellation.Token);
+        AddActivityControls();
         await InitializeAudioOutput();
         if (closed) return;
         appearance.Load(); ApplyAppearance();
