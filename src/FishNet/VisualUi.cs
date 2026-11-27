@@ -261,7 +261,8 @@ public sealed partial class MainWindow
             var edit = new PhotoEdit(turns.SelectedIndex, Value(x), Value(y), Value(width), Value(height), Value(brightness));
             // The App SDK picker returns a path without creating/truncating the file.
             // Validate source/destination and encode successfully before AtomicFile publishes it.
-            var picker = new Microsoft.Windows.Storage.Pickers.FileSavePicker(AppWindow.Id) { SuggestedFileName = item.Name + "-edited" };
+            var picker = new Microsoft.Windows.Storage.Pickers.FileSavePicker(AppWindow.Id)
+                { SuggestedFileName = Path.GetFileNameWithoutExtension(item.Name) + "-edited", DefaultFileExtension = ".png" };
             picker.FileTypeChoices.Add("PNG image", new List<string> { ".png" }); picker.FileTypeChoices.Add("JPEG image", new List<string> { ".jpg" });
             var output = await picker.PickSaveFileAsync(); if (output is null || closed) return;
             await VisualFiles.ExportPhotoAsync(item.Path, output.Path, edit, CancellationToken.None);

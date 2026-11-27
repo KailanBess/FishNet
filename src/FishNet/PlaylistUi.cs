@@ -72,7 +72,7 @@ public sealed partial class MainWindow
             Action("Play", () => PlayTracksAsync(list.Tracks), list.Tracks.Count > 0);
             Action("Export M3U", async () =>
             {
-                var picker = new Microsoft.Windows.Storage.Pickers.FileSavePicker(AppWindow.Id) { SuggestedFileName = list.Name }; picker.FileTypeChoices.Add("M3U8 playlist", new List<string> { ".m3u8" });
+                var picker = new Microsoft.Windows.Storage.Pickers.FileSavePicker(AppWindow.Id) { SuggestedFileName = list.Name, DefaultFileExtension = ".m3u8" }; picker.FileTypeChoices.Add("M3U8 playlist", new List<string> { ".m3u8" });
                 var file = await picker.PickSaveFileAsync();
                 if (file is not null)
                 {
