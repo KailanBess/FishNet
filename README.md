@@ -1,6 +1,6 @@
 # FishNet
 
-FishNet **0.6.3** is a native .NET 10 LTS / WinUI 3 Windows media player, local library and app-link collection in the Aquarium family. This release uses Windows App SDK path-only save pickers for photo, playlist and conversion exports. Selecting a destination does not create or truncate it before validation. Conversion uses read-only source streams and publishes completed output from a same-folder temporary file, preserving prior destinations when preparation/cancellation fails. Export dialogs supply explicit format extensions and an extension-free photo-copy name. It retains the local photo/PDF library, export-copy editing and portable Aquarium.Core settings dependency. Audio/video playback, internet radio and existing records remain available.
+FishNet **0.6.4** is a native .NET 10 LTS / WinUI 3 Windows media player, local library and app-link collection in the Aquarium family. This release uses Windows App SDK path-only save pickers for photo, playlist and conversion exports. Selecting a destination does not create or truncate it before validation. Conversion uses read-only source streams and publishes completed output from a same-folder temporary file, preserving prior destinations when preparation/cancellation fails. Export dialogs supply explicit format extensions and an extension-free photo-copy name. It retains the local photo/PDF library, export-copy editing and portable Aquarium.Core settings dependency. Audio/video playback, internet radio and existing records remain available.
 
 The broader development scope comes from the [shared ecosystem specification](https://chatgpt.com/share/6b08a8dd-e4a8-83e9-ab79-0f2360b34a3e), whose full text is tracked in Aquarium. This release implements one part of that roadmap; Tailscale and private networking remain excluded.
 
@@ -44,6 +44,12 @@ Add an existing desktop executable, a browser executable or an HTTPS website in 
 
 Microsoft Store app identities, arbitrary URI schemes, saved command-line flags and automatic app discovery are not supported. Provider links do not grant a license, subscription or DRM access.
 
+## Local activity history
+
+Customize → **Review local activity** shows up to 500 app-start and error-notice events, with UTC times, fixed codes, IDs, levels and app versions. Notice text, media names/paths, URLs, accounts and exception details are omitted. Records remain in the active profile under `Activity/history.json`; nothing uploads automatically. This is separate from playback history, crash collection, notification history and Aquarium record backups. Up to 16 writes may be pending; failures, cancellation or queue limits latch an explicit incomplete-session warning. Unsupported/corrupt history is preserved, while unrelated media features remain available.
+
+Export saves the immutable snapshot just reviewed through a path-only JSON picker and an atomic write. Choose a destination outside the active profile and program folders; linked paths are refused and cancellation preserves previous destination bytes. Unknown storage fields remain on disk but are excluded from the typed review/export. These logs can still disclose app-use timing; export only when you intend to share that information.
+
 ## Appearance and storage
 
 Customize colors, background, border and compact library spacing. Aquarium can optionally review and apply a common Ocean/Midnight/Slate and Mint/Blue/Coral palette to closed, initialized profiles. Local records live under `%LOCALAPPDATA%\FishNet`; unreadable files are preserved with affected edits disabled. Profile files are not included in releases. A second FishNet editor cannot open the same profile concurrently; Windows releases its lease after a crash.
@@ -63,7 +69,7 @@ dotnet run --project tests/FishNet.MediaTests -c Release
 dotnet run --project tests/FishNet.ConversionTests -c Release
 ```
 
-The restore script obtains the published Aquarium.Core 0.2.0 package and verifies its pinned SHA-256 before NuGet uses the local `.core-feed`; no credentials or binary dependencies are committed.
+The restore script obtains the published Aquarium.Core 0.4.0 package and verifies its pinned SHA-256 before NuGet uses the local `.core-feed`; no credentials or binary dependencies are committed.
 
 Release packaging reruns both regression suites and checks the source/tag version. Optional signing uses GitHub secrets `WINDOWS_SIGNING_PFX_BASE64` and `WINDOWS_SIGNING_PASSWORD`, plus variable `WINDOWS_TIMESTAMP_URL` with the provider's HTTPS RFC 3161 endpoint. Credentials are available only to main/tag release packaging. Partial configuration, failed trust verification or missing timestamps fail packaging. No signing credentials are committed.
 

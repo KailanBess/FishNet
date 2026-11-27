@@ -3,6 +3,7 @@ var root = Path.Combine(Path.GetTempPath(), "FishNet-media-tests-" + Guid.NewGui
 Directory.CreateDirectory(root);
 try
 {
+    await ActivityChecks.Run(root);
     await RadioChecks.Run(root);
     await VisualChecks.Run(root);
     await DuplicateChecks.Run(root);
