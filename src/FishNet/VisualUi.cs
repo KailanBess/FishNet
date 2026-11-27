@@ -259,7 +259,10 @@ public sealed partial class MainWindow
             if (await Dialog("Export an edited photo copy", new ScrollViewer { Content = body, MaxHeight = 500 }).ShowAsync() != ContentDialogResult.Primary) return;
             int Value(NumberBox box) => double.IsFinite(box.Value) && box.Value == Math.Truncate(box.Value) ? checked((int)box.Value) : throw new InvalidDataException("Enter whole pixel/brightness values.");
             var edit = new PhotoEdit(turns.SelectedIndex, Value(x), Value(y), Value(width), Value(height), Value(brightness));
-            var picker = new FileSavePicker { SuggestedFileName = item.Name + "-edited" }; picker.FileTypeChoices.Add("PNG image", new List<string> { ".png" }); picker.FileTypeChoices.Add("JPEG image", new List<string> { ".jpg" }); InitPicker(picker);
+            // The App SDK picker returns a path without creating/truncating the file.
+            // Validate source/destination and encode successfully before AtomicFile publishes it.
+            var picker = new Microsoft.Windows.Storage.Pickers.FileSavePicker(AppWindow.Id) { SuggestedFileName = item.Name + "-edited" };
+            picker.FileTypeChoices.Add("PNG image", new List<string> { ".png" }); picker.FileTypeChoices.Add("JPEG image", new List<string> { ".jpg" });
             var output = await picker.PickSaveFileAsync(); if (output is null || closed) return;
             await VisualFiles.ExportPhotoAsync(item.Path, output.Path, edit, CancellationToken.None);
             Notice.Severity = InfoBarSeverity.Success; Notice.Message = "Edited copy saved. The original was not changed; source metadata was not copied."; Notice.IsOpen = true;

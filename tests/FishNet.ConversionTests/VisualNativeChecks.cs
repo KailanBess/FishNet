@@ -38,6 +38,7 @@ internal static class VisualNativeChecks
         if (Encoding.ASCII.GetString(File.ReadAllBytes(copy)).Contains(marker)) throw new Exception("Private source metadata was copied");
         try { await VisualFiles.ExportPhotoAsync(photo, photo, new PhotoEdit(), default); throw new Exception("Photo source overwrite accepted"); }
         catch (InvalidDataException) { }
+        if (!File.ReadAllBytes(photo).SequenceEqual(original)) throw new Exception("Rejected source destination changed the original photo");
         var before = File.ReadAllBytes(copy);
         try { await VisualFiles.ExportPhotoAsync(photo, copy, new PhotoEdit(X: 99), default); throw new Exception("Invalid crop accepted"); }
         catch (InvalidDataException) { }
@@ -45,6 +46,7 @@ internal static class VisualNativeChecks
         using var cancel = new CancellationTokenSource(); cancel.Cancel();
         try { await VisualFiles.ExportPhotoAsync(photo, copy, new PhotoEdit(), cancel.Token); throw new Exception("Canceled export accepted"); }
         catch (OperationCanceledException) { }
+        if (!File.ReadAllBytes(copy).SequenceEqual(before)) throw new Exception("Canceled photo export changed the previous destination");
 
         var pdf = Path.Combine(root, "generated-document.pdf");
         string[] objects =

@@ -120,21 +120,17 @@ public sealed partial class MainWindow
         converting = true; cancelConversion = false;
         var input = conversionInput; var selected = conversionFormat;
         conversionStatus = "Choose where to save the converted copy."; RenderConverter();
-        StorageFile? temporary = null;
         try
         {
             var extension = "." + selected.ToLowerInvariant();
-            var picker = new FileSavePicker { SuggestedFileName = Path.GetFileNameWithoutExtension(input.Name) + "-converted" };
+            var picker = new Microsoft.Windows.Storage.Pickers.FileSavePicker(AppWindow.Id) { SuggestedFileName = Path.GetFileNameWithoutExtension(input.Name) + "-converted" };
             picker.FileTypeChoices.Add(selected, new List<string> { extension });
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
             var output = await picker.PickSaveFileAsync();
             if (output is null || closed || cancelConversion) { conversionStatus = "Conversion cancelled."; return; }
             if (output.Path.Equals(input.Path, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Choose a different destination from the source file.");
-            var folder = await output.GetParentAsync();
-            temporary = await folder.CreateFileAsync(".fishnet-" + Guid.NewGuid().ToString("N") + extension, CreationCollisionOption.FailIfExists);
             conversionCancellation = new CancellationTokenSource();
             if (cancelConversion || closed) conversionCancellation.Cancel();
-            await MediaConverter.TranscodeAsync(input, temporary, selected, conversionCancellation.Token, value => DispatcherQueue.TryEnqueue(() =>
+            await MediaConverter.ConvertCopyAsync(input.Path, output.Path, selected, conversionCancellation.Token, value => DispatcherQueue.TryEnqueue(() =>
             {
                 if (closed) return;
                 conversionStatus = $"Converting… {Math.Clamp(value, 0, 100):0}%";
@@ -142,7 +138,6 @@ public sealed partial class MainWindow
                 if (conversionProgress is not null) { conversionProgress.IsIndeterminate = false; conversionProgress.Value = value; }
             }));
             if (cancelConversion || closed) { conversionStatus = "Conversion cancelled."; return; }
-            await temporary.MoveAndReplaceAsync(output); temporary = null;
             conversionStatus = "Saved: " + output.Path;
         }
         catch (OperationCanceledException) { conversionStatus = "Conversion cancelled. No converted media was saved."; }
@@ -150,11 +145,6 @@ public sealed partial class MainWindow
         finally
         {
             conversionCancellation?.Dispose(); conversionCancellation = null;
-            if (temporary is not null)
-            {
-                try { await temporary.DeleteAsync(StorageDeleteOption.PermanentDelete); }
-                catch { conversionStatus += " Temporary output could not be removed: " + temporary.Path; }
-            }
             converting = false;
             if (!closed && mediaPage == "Converter") RenderConverter();
         }
