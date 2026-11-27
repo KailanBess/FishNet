@@ -24,7 +24,7 @@ public sealed partial class MainWindow
     private readonly DispatcherTimer slideshow = new() { Interval = TimeSpan.FromSeconds(5) };
 
     private void StopVisualWork()
-    { slideshow.Stop(); visualCancellation?.Cancel(); visualCancellation?.Dispose(); visualCancellation = null; visualPdf?.Dispose(); visualPdf = null; }
+    { slideshow.Stop(); photoDuplicateCancellation?.Cancel(); visualCancellation?.Cancel(); visualCancellation?.Dispose(); visualCancellation = null; visualPdf?.Dispose(); visualPdf = null; }
 
     private void RenderVisualLibrary()
     {
@@ -64,6 +64,9 @@ public sealed partial class MainWindow
         }
         if (mediaPage == "Photos")
         {
+            var duplicates = new Button { Content = "Compare matching photos for duplicate file contents", IsEnabled = !visualBusy && VisualEntries().Count >= 2 };
+            duplicates.Click += async (_, _) => await ComparePhotosAsync();
+            MediaBody.Children.Add(duplicates);
             var screenshots = new CheckBox { Content = "Imported screenshots only", IsChecked = visualScreenshots };
             screenshots.Checked += (_, _) => { visualScreenshots = true; RenderVisualLibrary(); };
             screenshots.Unchecked += (_, _) => { visualScreenshots = false; RenderVisualLibrary(); };
