@@ -10,7 +10,7 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         try { profileLease = ProfileLease.Acquire(); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException or InvalidOperationException)
         {
             window = new Window { Title = "FishNet profile unavailable", Content = new Microsoft.UI.Xaml.Controls.TextBlock
                 { Text = "FishNet is already open, or its profile is unavailable. Close the other copy before trying again.", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(24) } };

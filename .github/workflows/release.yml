@@ -20,6 +20,8 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - uses: microsoft/setup-msbuild@v2
+      - name: Restore pinned shared Core package
+        run: ./scripts/Restore-Core.ps1
       - name: Require release source on main
         run: git merge-base --is-ancestor HEAD origin/main
       - name: Publish complete self-contained Windows runtime
@@ -59,7 +61,7 @@ jobs:
         run: |
           $signed = [bool](Get-Content artifacts/release/BUILD-INFO.json -Raw | ConvertFrom-Json).signed
           $status = if ($signed) { 'Publisher-signed and timestamp verified.' } else { 'Unsigned development release; publisher signing is not configured.' }
-          $notes = "Complete FishNet Windows x64 app. $status Adds Internet radio with up to 200 saved direct HTTPS streams, search, explicit playback and removal. Loading or editing stations never connects; corrupt or unsupported station records are preserved. Retains local media, conversion, playlists, moved-folder repair and audio-output selection. Extract the entire ZIP into a new folder and run FishNet.exe. Keep its self-contained runtime files together. Provider availability, codecs and live radio/device acceptance remain external checks. User profiles are not included. Verify SHA256SUMS.txt. This is an initial implementation from the ecosystem roadmap at https://chatgpt.com/share/6b08a8dd-e4a8-83e9-ab79-0f2360b34a3e ; the full overhaul is not complete. Tailscale is excluded. Aquarium handles app installation and updates."
+          $notes = "Complete FishNet Windows x64 app. $status Adds a local photo/PDF catalog with albums, imported screenshot filtering, slideshow, metadata inspection and bounded native PDF page rendering. Crop, rotate and brightness export a separate PNG/JPEG copy without source metadata. Original media is preserved. Uses the pinned Aquarium.Core settings package. Existing radio, local media and app links remain available. Retains local media, conversion, playlists, moved-folder repair and audio-output selection. Extract the entire ZIP into a new folder and run FishNet.exe. Keep its self-contained runtime files together. Provider availability, codecs and live radio/device acceptance remain external checks. User profiles are not included. Verify SHA256SUMS.txt. This is an initial implementation from the ecosystem roadmap at https://chatgpt.com/share/6b08a8dd-e4a8-83e9-ab79-0f2360b34a3e ; the full overhaul is not complete. Tailscale is excluded. Aquarium handles app installation and updates."
           $notes | Set-Content artifacts/notes.txt -Encoding utf8
           $tag = 'v' + (Get-Content artifacts/release/BUILD-INFO.json -Raw | ConvertFrom-Json).version
           gh release view $tag *> $null

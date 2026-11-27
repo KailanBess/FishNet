@@ -10,7 +10,7 @@ public sealed partial class MainWindow
 {
     private sealed record WatchPosition(string Path, long Ticks);
     private readonly string watchPositionFile = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet", "continue-watching.json");
+        ProfilePaths.DataDirectory, "continue-watching.json");
     private string? watchedPath;
     private TimeSpan? pendingWatchPosition;
     private string? activeWatchPositionFile;

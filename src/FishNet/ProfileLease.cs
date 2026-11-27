@@ -4,7 +4,7 @@ internal static class ProfileLease
 {
     internal static FileStream Acquire()
     {
-        var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet");
+        var directory = ProfilePaths.DataDirectory;
         for (var current = directory; !string.IsNullOrEmpty(current); current = Path.GetDirectoryName(current))
             if (Directory.Exists(current) && (File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
                 throw new IOException("Linked profiles are not supported.");

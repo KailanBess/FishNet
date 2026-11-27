@@ -6,6 +6,8 @@
         <NavigationViewItem Content="Home" Tag="Home" Icon="Home"/>
         <NavigationViewItem Content="Music" Tag="Music" Icon="Audio"/>
         <NavigationViewItem Content="Videos" Tag="Videos" Icon="Video"/>
+        <NavigationViewItem Content="Photos" Tag="Photos" Icon="Pictures"/>
+        <NavigationViewItem Content="PDF documents" Tag="Documents" Icon="Document"/>
         <NavigationViewItem Content="Services &amp; apps" Tag="Apps" Icon="Library"/>
         <NavigationViewItem Content="Podcasts" Tag="Podcasts" Icon="Audio"/>
         <NavigationViewItem Content="Internet radio" Tag="Radio" Icon="Audio"/>

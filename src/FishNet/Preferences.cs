@@ -17,7 +17,7 @@ public sealed class Preferences
 // Separate from the catalog and library so appearance never rewrites app records.
 public sealed class Appearance
 {
-    private readonly string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet", "appearance.json");
+    private readonly string path = Path.Combine(ProfilePaths.DataDirectory, "appearance.json");
     private Preferences current = new();
     private bool writable = true;
     public string? Warning { get; private set; }

@@ -15,7 +15,7 @@ public sealed partial class MainWindow
     private sealed record PodcastFeed(string Title, string Url, List<PodcastEpisode> Episodes);
     private static readonly HttpClient podcastHttp = new(new HttpClientHandler { UseCookies = false });
     private readonly string podcastFolder = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet", "Podcasts");
+        ProfilePaths.DataDirectory, "Podcasts");
     private bool podcastBusy;
     private CancellationTokenSource? podcastCancellation;
 

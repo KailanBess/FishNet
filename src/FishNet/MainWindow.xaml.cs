@@ -31,9 +31,11 @@ public sealed partial class MainWindow : Window
                 SaveWatchPosition();
         };
         watchTimer.Start();
+        slideshow.Tick += async (_, _) => await AdvanceVisual(1);
         Closed += (_, _) =>
         {
             closed = true;
+            StopVisualWork(); visualPdf = null;
             watchTimer.Stop();
             SetSleepTimer(null);
             folderTimer?.Stop();
@@ -64,11 +66,12 @@ public sealed partial class MainWindow : Window
         {
             var picker = new FileOpenPicker();
             WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
-            foreach (var extension in VideoExtensions.Concat(MediaCatalog.AudioExtensions))
+            foreach (var extension in VideoExtensions.Concat(MediaCatalog.AudioExtensions).Concat(VisualLibrary.ImageExtensions).Append(".pdf"))
                 picker.FileTypeFilter.Add(extension);
             var file = await picker.PickSingleFileAsync();
             if (file is null || closed) return;
-            await PlayLocalAsync(file);
+            if (VisualLibrary.Kind(file.Path) is not null) await OpenVisualFileAsync(file);
+            else await PlayLocalAsync(file);
         }
         catch (Exception ex)
         {

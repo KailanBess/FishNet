@@ -7,7 +7,7 @@ public sealed class MediaCatalog
 {
     private readonly string path;
     private readonly SemaphoreSlim writes = new(1, 1);
-    public MediaCatalog(string? directory = null) => path = System.IO.Path.Combine(directory ?? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FishNet"), "media-library.json");
+    public MediaCatalog(string? directory = null) => path = System.IO.Path.Combine(directory ?? ProfilePaths.DataDirectory, "media-library.json");
     public List<RecentMedia> Items { get; private set; } = [];
     public string? Warning { get; private set; }
     public async Task LoadAsync()

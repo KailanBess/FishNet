@@ -4,6 +4,7 @@ Directory.CreateDirectory(root);
 try
 {
     await RadioChecks.Run(root);
+    await VisualChecks.Run(root);
     RepairChecks.Run(root);
     var playlists = new Playlists(root); await playlists.LoadAsync();
     var exchangePath = Path.Combine(root, "playlist.m3u8");
