@@ -1,6 +1,6 @@
 # FishNet
 
-FishNet **0.6.2** is a native .NET 10 LTS / WinUI 3 Windows media player, local library and app-link collection in the Aquarium family. This release uses Windows App SDK path-only save pickers for photo, playlist and conversion exports. Selecting a destination does not create or truncate it before validation. Conversion uses read-only source streams and publishes completed output from a same-folder temporary file, preserving prior destinations when preparation/cancellation fails. Export dialogs supply explicit format extensions and an extension-free photo-copy name. It retains the local photo/PDF library, export-copy editing and portable Aquarium.Core settings dependency. Audio/video playback, internet radio and existing records remain available.
+FishNet **0.6.3** is a native .NET 10 LTS / WinUI 3 Windows media player, local library and app-link collection in the Aquarium family. This release uses Windows App SDK path-only save pickers for photo, playlist and conversion exports. Selecting a destination does not create or truncate it before validation. Conversion uses read-only source streams and publishes completed output from a same-folder temporary file, preserving prior destinations when preparation/cancellation fails. Export dialogs supply explicit format extensions and an extension-free photo-copy name. It retains the local photo/PDF library, export-copy editing and portable Aquarium.Core settings dependency. Audio/video playback, internet radio and existing records remain available.
 
 The broader development scope comes from the [shared ecosystem specification](https://chatgpt.com/share/6b08a8dd-e4a8-83e9-ab79-0f2360b34a3e), whose full text is tracked in Aquarium. This release implements one part of that roadmap; Tailscale and private networking remain excluded.
 
@@ -23,6 +23,12 @@ Download `FishNet-windows-x64.zip` from [Releases](../../releases), extract the 
 - **Podcasts:** explicit user-added HTTPS RSS feeds, downloaded episodes and subscriptions. Service availability remains the provider's responsibility.
 - **Internet radio:** save up to 200 named direct HTTPS audio streams, search stations, play and remove saved entries. Adding a station never connects; Play explicitly uses the Windows media engine. Pause/volume and Close media retain their normal behavior. Station lists load without network access and damaged records are preserved with edits disabled. Codecs, connectivity and regional access depend on Windows and the provider. Radio streams remain separate from local media, queues and video resume records. Public stream addresses are saved in `radio-stations.json`; do not put private tokens in them. No station directory, subscription access, recording or automatic reconnection is provided.
 - **Watch media folder:** checks selected folders while FishNet is open and adds new files. Stopping a watch does not remove existing media or files.
+
+## Review duplicate photos
+
+On Photos, narrow the album/search/screenshot filters, then choose **Compare matching photos for duplicate file contents**. FishNet compares file lengths and SHA-256 hashes without changing files or catalog records. Different visual encodings of the same picture do not match. Separate hard links may share storage. Results describe the files at scan time and can become stale.
+
+Each scan supports up to 10,000 matching paths, 64 MiB per file and 2 GiB total reads. Missing, unreadable, linked, oversized and budget-skipped paths remain explicit in the report; partial scans do not establish that the library has no duplicates. Cancel stops without publishing a report. The preview limits displayed groups/paths; an explicit JSON export contains the full results and local paths. Save it outside the active profile folder. No report is uploaded and no automatic deletion is offered.
 
 ## Repair a moved folder
 
